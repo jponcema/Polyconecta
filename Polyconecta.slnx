@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Contpaq.Bridge/Contpaq.Bridge.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Contpaq.Bridge.Tests/Contpaq.Bridge.Tests.csproj" />
+  </Folder>
+</Solution>

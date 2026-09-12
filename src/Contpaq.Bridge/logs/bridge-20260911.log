@@ -1,0 +1,56 @@
+2026-09-11 13:12:45.733 -06:00 [ERR] Hosting failed to start
+System.PlatformNotSupportedException: COM Interop is not supported on this platform.
+   at System.Threading.Thread.SetApartmentStateUnchecked(ApartmentState state, Boolean throwOnError)
+   at System.Threading.Thread.SetApartmentState(ApartmentState state)
+   at Contpaq.Bridge.Infrastructure.Sdk.ContpaqiSdkGateway.ExecuteAsync(CancellationToken stoppingToken) in /Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge/Infrastructure/Sdk/ContpaqiSdkGateway.cs:line 77
+   at Microsoft.Extensions.Hosting.BackgroundService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2026-09-11 13:12:45.784 -06:00 [ERR] BackgroundService failed
+System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at Contpaq.Bridge.Core.Services.MetricCollectorService.ExecuteAsync(CancellationToken stoppingToken) in /Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge/Core/Services/MetricCollectorService.cs:line 54
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+2026-09-11 13:12:45.784 -06:00 [FTL] The HostOptions.BackgroundServiceExceptionBehavior is configured to StopHost. A BackgroundService has thrown an unhandled exception, and the IHost instance is stopping. To avoid this behavior, configure this to Ignore; however the BackgroundService will not be restarted.
+System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at Contpaq.Bridge.Core.Services.MetricCollectorService.ExecuteAsync(CancellationToken stoppingToken) in /Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge/Core/Services/MetricCollectorService.cs:line 54
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+2026-09-11 16:35:38.035 -06:00 [WRN] Running Contpaq.Bridge in MOCK SDK MODE (non-Windows platform or UseMockSdk=true). Native DLL calls are simulated.
+2026-09-11 16:35:38.094 -06:00 [INF] Starting Contpaq.Bridge Worker Loop (MockMode=true)
+2026-09-11 16:35:38.130 -06:00 [INF] Now listening on: http://0.0.0.0:5005
+2026-09-11 16:35:38.131 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-09-11 16:35:38.131 -06:00 [INF] Hosting environment: Production
+2026-09-11 16:35:38.131 -06:00 [INF] Content root path: /Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge
+2026-09-11 16:35:39.713 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5005/scalar/v1 - null null
+2026-09-11 16:35:39.731 -06:00 [INF] Executing endpoint 'HTTP: GET /scalar/{documentName}'
+2026-09-11 16:35:39.734 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2026-09-11 16:35:39.738 -06:00 [INF] Executed endpoint 'HTTP: GET /scalar/{documentName}'
+2026-09-11 16:35:39.739 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5005/scalar/v1 - 200 733 text/html 26.6875ms
+2026-09-11 16:35:41.696 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5005/swagger/v1/swagger.json - null null
+2026-09-11 16:35:41.751 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5005/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 55.3751ms
+2026-09-11 16:35:44.901 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5005/scalar/v1/scalar.js - null null
+2026-09-11 16:35:44.903 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5005/scalar/v1/scalar.js - 404 0 null 2.3198ms
+2026-09-11 16:35:44.904 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5005/scalar/v1/scalar.js, Response status code: 404
+2026-09-11 16:35:57.249 -06:00 [WRN] Running Contpaq.Bridge in MOCK SDK MODE (non-Windows platform or UseMockSdk=true). Native DLL calls are simulated.
+2026-09-11 16:35:57.317 -06:00 [INF] Starting Contpaq.Bridge Worker Loop (MockMode=true)
+2026-09-11 16:35:57.365 -06:00 [INF] Now listening on: http://0.0.0.0:5005
+2026-09-11 16:35:57.366 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-09-11 16:35:57.366 -06:00 [INF] Hosting environment: Production
+2026-09-11 16:35:57.366 -06:00 [INF] Content root path: /Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge
+2026-09-11 16:35:57.776 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5005/scalar/v1 - null null
+2026-09-11 16:35:57.793 -06:00 [INF] Executing endpoint 'HTTP: GET /scalar/{documentName}'
+2026-09-11 16:35:57.796 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2026-09-11 16:35:57.800 -06:00 [INF] Executed endpoint 'HTTP: GET /scalar/{documentName}'
+2026-09-11 16:35:57.801 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5005/scalar/v1 - 200 774 text/html 25.5309ms
+2026-09-11 16:41:36.215 -06:00 [WRN] Running Contpaq.Bridge in MOCK SDK MODE (non-Windows platform or UseMockSdk=true). Native DLL calls are simulated.
+2026-09-11 16:41:36.280 -06:00 [INF] Starting Contpaq.Bridge Worker Loop (MockMode=true)
+2026-09-11 16:41:36.305 -06:00 [INF] Now listening on: http://0.0.0.0:5005
+2026-09-11 16:41:36.305 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-09-11 16:41:36.305 -06:00 [INF] Hosting environment: Production
+2026-09-11 16:41:36.305 -06:00 [INF] Content root path: /Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge
+2026-09-11 16:41:38.528 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5005/ - null null
+2026-09-11 16:41:38.551 -06:00 [INF] Executing endpoint 'Contpaq.Bridge.Dashboard.Controllers.DashboardViewController.Index (Contpaq.Bridge)'
+2026-09-11 16:41:38.557 -06:00 [INF] Route matched with {action = "Index", controller = "DashboardView"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller Contpaq.Bridge.Dashboard.Controllers.DashboardViewController (Contpaq.Bridge).
+2026-09-11 16:41:38.560 -06:00 [INF] Executing PhysicalFileResult, sending file '/Users/emilio/Development/Sandbox/Polyconecta/src/Contpaq.Bridge/bin/Debug/net8.0/Dashboard/wwwroot/index.html' with download name '' ...
+2026-09-11 16:41:38.570 -06:00 [INF] Executed action Contpaq.Bridge.Dashboard.Controllers.DashboardViewController.Index (Contpaq.Bridge) in 10.3711ms
+2026-09-11 16:41:38.572 -06:00 [INF] Executed endpoint 'Contpaq.Bridge.Dashboard.Controllers.DashboardViewController.Index (Contpaq.Bridge)'
+2026-09-11 16:41:38.574 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5005/ - 200 14388 text/html 46.6409ms

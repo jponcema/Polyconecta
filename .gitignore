@@ -1,0 +1,19 @@
+# C# / .NET Ignore patterns
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+packages/
+.vs/
+.vscode/
+
+# SQLite & local runtime storage
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CONTPAQi Integration Bridge Direct Read Catalogs API Contract",
+  "version": "1.0.0",
+  "description": "High-performance direct SQL Server read-only endpoints for CONTPAQi master catalogs and inventory balances.",
+  "endpoints": {
+    "GET /api/v1/catalogs/products": {
+      "summary": "Query active product master catalog (admProductos)",
+      "query_parameters": {
+        "search": { "type": "string", "description": "Filter by SKU or description" },
+        "limit": { "type": "integer", "default": 100 }
+      },
+      "responses": {
+        "200": {
+          "body": {
+            "total": 1,
+            "products": [
+              {
+                "id_producto": 101,
+                "codigo_producto": "RES-HDPE-01",
+                "nombre_producto": "Resina HDPE Grado Inyeccion",
+                "tipo_producto": 1,
+                "control_existencia": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    "GET /api/v1/catalogs/clients": {
+      "summary": "Query client and supplier catalog (admClientes)"
+    },
+    "GET /api/v1/catalogs/warehouses": {
+      "summary": "Query active warehouse locations (admAlmacenes)"
+    },
+    "GET /api/v1/inventory/stocks": {
+      "summary": "Query real-time product stock layer balances (admCapasProducto & admExistenciaCapa)",
+      "query_parameters": {
+        "codigo_producto": { "type": "string", "required": true },
+        "codigo_almacen": { "type": "string", "required": false }
+      },
+      "responses": {
+        "200": {
+          "body": {
+            "codigo_producto": "RES-HDPE-01",
+            "total_existencia": 12500.0,
+            "layers": [
+              {
+                "codigo_almacen": "ALM-MP",
+                "numero_lote": "LOT-2026-X9",
+                "fecha_caducidad": "2027-09-11",
+                "pedimento": "PED-44102",
+                "existencia": 5000.0
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
