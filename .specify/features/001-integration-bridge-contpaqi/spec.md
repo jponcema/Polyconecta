@@ -2,149 +2,133 @@
 
 **Feature Branch**: `001-integration-bridge-contpaqi`  
 **Created**: 2026-09-11  
-**Status**: Draft  
-**Input**: User description: "001-integration-bridge-contpaqi: Standalone, application-agnostic .NET x86 CONTPAQi Comercial Premium v10+ Integration Bridge with REST/gRPC API, Outbox Pattern, SQL Server Read Pipeline, and Embedded Real-Time Web Dashboard"
+**Last Updated**: 2026-09-14 (Retroalimentado con hallazgos empíricos de sesión)  
+**Status**: Approved & Refactored  
+**Input**: User description: "001-integration-bridge-contpaqi: Standalone, application-agnostic .NET 8 x86 CONTPAQi Comercial Premium v10+ Integration Bridge with REST API, Outbox Pattern, SQL Server Read Pipeline, and Embedded Real-Time Web Dashboard"
 
 ---
 
-## Overview
+## 1. Overview
 
-The **CONTPAQi Integration Bridge** is a **completely standalone, application-agnostic integration microservice** designed to bridge external software applications (ERP extensions, shop-floor management tools, e-commerce engines, custom portals) with **CONTPAQi Comercial Premium v10+**. 
+El **CONTPAQi Integration Bridge** es un microservicio autónomo yagnóstico desarrollado en **.NET 8 (x86 32-bit)** diseñado para servir de puente entre aplicaciones externas de PolyConecta (Handhelds, Portal de Clientes, Motor de Ruteo MES) y **CONTPAQi Comercial Premium v10+**.
 
-It operates independently of any specific client application, exposing a standardized, generic REST/gRPC API contract for ERP write/read commands. It features an embedded **Real-Time Web Monitoring Dashboard** with interactive performance charts, queue statistics, and Dead Letter Queue (DLQ) administrative controls.
+Opera desacoplado de la lógica de negocio cliente, exponiendo una API REST/JSON estandarizada para comandos de escritura (vía cola Outbox FIFO) y lecturas directas a SQL Server (`adm*`). Incluye un **Dashboard Web en Tiempo Real** para monitoreo operativo y gestión administrativa de la cola de mensajes fallidos (Dead Letter Queue - DLQ).
 
 ---
 
-## User Scenarios & Testing *(mandatory)*
+## 2. Hallazgos Empíricos y Restricciones de Arquitectura (Sesión de Validación)
+
+De acuerdo con las pruebas empíricas y diagnóstico de ejecuciones nativas Win32 en VPS (`vps-innatos`), la especificación incorpora de forma obligatoria los siguientes principios técnicos:
+
+1. **Ciclo de Vida Único del SDK (`fInicializaSDK` / `fTerminaSDK`)**:
+   - `fInicializaSDK()` debe llamarse **UNA SOLA VEZ** por ciclo de vida del proceso `Contpaq.Bridge.exe`.
+   - `fTerminaSDK()` solo se invoca cuando el proceso se detiene definitivamente. Llamar a `fTerminaSDK()` durante cierres de sesión de empresa corrompe la memoria nativa de Borland/CLR y provoca fallos de acceso `0xc0000005` en `coreclr.dll`.
+   - El cierre de sesión (`CloseCompanySession`) debe llamar **únicamente** a `fCierraEmpresa()`.
+
+2. **Exclusividad de Proceso y Entorno de Ejecución (Session 2 Interactive)**:
+   - El SDK de CONTPAQi admite **un único proceso activo** que mantenga el handle de licencia.
+   - `Contpaq.Bridge.exe` se ejecuta como servicio/tarea en la Sesión de Usuario Interactiva (Session 2 / Session ID 2) bajo arquitectura de 32 bits (`win-x86`) vía `ContpaqBridgeTask`.
+
+3. **Carga Nativa de DLLs (`NativeLibrary.SetDllImportResolver`)**:
+   - Se utiliza `NativeLibrary.SetDllImportResolver` para resolver dinámicamente `MGW_SDK.dll` desde la ruta efectiva (`C:\Program Files (x86)\Compac\COMERCIAL` o `AdminPAQSDK`), evitando errores `DllNotFoundException` (Win32 Error 126/127).
+   - Se debe establecer `Directory.SetCurrentDirectory` + `SetDllDirectory` antes del primer llamado JIT.
+   - Se omite `fSetNombrePAQ` para Comercial Premium, evitando violaciones de acceso de memoria.
+
+4. **Manejo del Código de Retorno `126209` (`fAbreEmpresa`)**:
+   - El código `126209` indica que la empresa ya se encuentra abierta en la sesión activa de CONTPAQi. Debe ser interpretado y tratado explícitamente como una **condición de éxito** (`SUCCESS`).
+
+5. **Protección y Tolerancia de Afectación (`fAfectaDocto_Param`)**:
+   - La llamada a `fAfectaDocto_Param` debe contar con protección try-catch. Si la afectación reporta advertencias no fatales, la transacción mantiene su estado `COMPLETED` garantizando que el documento y movimiento creados en `fAltaDocumento` / `fAltaMovimiento` conservan su `DocId` y `Folio` asignados.
+
+---
+
+## 3. User Scenarios & Acceptance Criteria
 
 ### User Story 1 - Agnostic ERP Command Ingestion & Local Outbox Persistence (Priority: P1)
 
-As an External Client Application (such as a shop-floor system, e-commerce engine, or custom ERP extension), I want to send generic ERP transaction requests (create documents, add movements, associate lot/pedimento numbers, affect stock balances) to the Bridge via a standardized REST/gRPC API, receiving an immediate acknowledgment while the Bridge guarantees durable, zero-loss processing.
-
-**Why this priority**: Complete decoupling requires the Bridge to act as a generic transaction broker. External applications must not depend on CONTPAQi SDK binaries, STA thread models, or ERP database locks, receiving an immediate API confirmation (`TransactionId`, status `PENDING`) in under 100 ms.
-
-**Independent Test**: Can be tested by posting 100 generic `DOCUMENT_CREATE` and `MOVEMENT_ADD` JSON payloads from a simple HTTP client (e.g. Postman or cURL) to `POST /api/v1/transactions`, verifying that all 100 requests return `202 Accepted` with unique transaction IDs and are safely persisted in the Bridge's local SQLite Outbox database.
+Como Aplicación Cliente Externa (Handheld, Portal PolyConecta), quiero enviar solicitudes de transacción ERP genéricas (crear documentos, agregar movimientos, asociar lotes, afectar inventarios) al Bridge mediante una API REST/JSON estandarizada, recibiendo una respuesta inmediata `202 Accepted` mientras el Bridge garantiza un procesamiento FIFO durable y libre de pérdidas.
 
 **Acceptance Scenarios**:
-
-1. **Given** a valid generic JSON command payload (`DOCUMENT_CREATE`, `MOVEMENT_ADD`, `LOT_ASSOCIATION`, or `DOCUMENT_AFFECT`), **When** an external application sends a request to `POST /api/v1/transactions`, **Then** the Bridge validates the JSON schema, assigns a unique `CorrelationId` and `TransactionId`, saves the record to local SQLite storage with status `PENDING`, and returns `202 Accepted` in under 100 ms.
-2. **Given** a batch of pending Outbox transactions, **When** the Bridge worker processes the queue, **Then** it executes the SDK calls sequentially inside a dedicated 32-bit STA thread using a shared session loop (`fInicializaSDK`, `fAbreEmpresa`, `fAltaDocumento`, `fAltaMovimiento`, `fAfectaDocto_Param`), updating transaction status to `COMPLETED` with the resulting CONTPAQi document ID and folio number.
-3. **Given** an incoming command containing a `callback_url` parameter, **When** transaction execution completes (or permanently fails), **Then** the Bridge sends an asynchronous HTTP Webhook callback to the specified `callback_url` with the execution outcome.
+1. **Given** un payload JSON válido (`DOCUMENT_CREATE`), **When** la aplicación cliente envía una petición a `POST /api/v1/transactions`, **Then** el Bridge valida la estructura, asigna `TransactionId` y `CorrelationId`, guarda el registro en SQLite Outbox (`bridge_outbox.db`) con estado `PENDING` y retorna `202 Accepted` en < 100 ms.
+2. **Given** transacciones pendientes en la cola Outbox, **When** el worker loop secuencial procesa la cola en un hilo de apartamento único (STA thread), **Then** ejecuta la secuencia SDK (`fAbreEmpresa`, `fAltaDocumento`, `fAltaMovimiento`, `fAfectaDocto_Param`), actualizando el estado a `COMPLETED` con el `contpaqi_doc_id` y `contpaqi_folio` resultantes.
+3. **Given** una transacción finalizada con `callback_url`, **When** se completa el procesamiento, **Then** el servicio dispara un Webhook POST asíncrono con los metadatos asignados.
 
 ---
 
-### User Story 2 - Standalone Web Dashboard for Real-Time Visual Monitoring & DLQ Control (Priority: P2)
+### User Story 2 - Standalone Web Dashboard & Real-Time Monitoring (Priority: P2)
 
-As a System Administrator or Integration Manager, I want to open a dedicated web dashboard hosted directly by the Bridge (e.g. `http://bridge-host:5055`) to view real-time transaction charts, queue depth, throughput metrics, SDK connection health, and interactively manage failed transactions in the Dead Letter Queue (DLQ).
-
-**Why this priority**: A standalone service must provide its own operational observability and diagnostic tooling. An embedded web dashboard gives administrators instant visual insights into ERP sync health without needing third-party monitoring stacks or client-specific UIs.
-
-**Independent Test**: Can be tested by navigating to the Bridge's web dashboard URL in a browser while sending a batch of transactions, verifying that real-time line charts update smoothly via WebSockets showing throughput (ops/sec), queue depth, SDK response latency, and error counts, and using the DLQ panel to inspect, edit payload, and retry a failed transaction.
+Como Administrador del Sistema, quiero acceder a un Dashboard Web embebido (`http://localhost:5005`) para supervisar métricas de procesamiento (Throughput ops/sec, profundidad de cola Outbox, latencia promedio del SDK, badges de salud de conexión) y gestionar elementos en la cola de errores (DLQ).
 
 **Acceptance Scenarios**:
-
-1. **Given** the Bridge service is running, **When** an administrator accesses the web dashboard port (e.g., `http://localhost:5055`), **Then** the dashboard displays live visual charts (throughput ops/sec, Outbox queue depth, average SDK latency, error/retry rates, and DLL/SQL connection status badges) updated in real time via WebSockets.
-2. **Given** an Outbox transaction that has reached `DEAD_LETTER_QUEUE` status after maximum retries, **When** the administrator opens the DLQ Management panel, **Then** the dashboard presents full transaction details (JSON payload, error history, stack trace, timestamps) with interactive buttons to **Retry Immediately**, **Edit Payload & Retry**, or **Purge**.
-3. **Given** an administrator using the DLQ Management panel, **When** they click "Edit Payload & Retry" on a failed item, **Then** the UI provides a JSON editor modal, validates the modified payload, updates the transaction record, resets `retry_count` to 0, and re-queues it for execution.
+1. **Given** el servicio Bridge en ejecución, **When** se navega al puerto 5005, **Then** el dashboard despliega gráficos interactivos actualizados vía WebSockets / SignalR.
+2. **Given** transacciones fallidas agotadas tras 5 reintentos en estado `DEAD_LETTER_QUEUE`, **When** el administrador abre el panel DLQ, **Then** puede inspeccionar el error, editar el payload JSON en un modal y reencolar la transacción a estado `PENDING`.
 
 ---
 
-### User Story 3 - High-Throughput Single-Threaded SDK Execution & Dynamic Session Reuse (Priority: P3)
+### User Story 3 - High-Throughput Worker Loop & Circuit Breaker (Priority: P3)
 
-As a System Integrator, I want the Bridge Worker engine to process high-volume transaction bursts efficiently using continuous SDK session reuse and tight execution timeouts (5-10s per transaction), ensuring high throughput (~10-20 ops/sec) while preventing ERP table locks from stalling the service.
-
-**Why this priority**: Initializing and closing the CONTPAQi SDK per transaction adds ~500ms-1s overhead per call. Maintaining an active enterprise session across queue bursts with strict transaction timeouts and Circuit Breaker protection guarantees high performance and fault isolation.
-
-**Independent Test**: Can be tested by queueing 100 transactions into the Bridge, verifying that the worker processes the burst in a single open SDK session (`fAbreEmpresa`) in under 10 seconds, and that if 1 transaction hits a table lock timeout (> 8s), the worker cancels the call, triggers a Circuit Breaker after 3 consecutive failures, and resumes queue processing safely after cooling down.
+Como Integrador de Sistemas, quiero que el motor de ejecución del SDK mantenga la sesión de empresa abierta entre ráfagas de transacciones, con timeout de 8s por transacción y protección de Circuit Breaker.
 
 **Acceptance Scenarios**:
-
-1. **Given** multiple pending transactions in the Outbox queue, **When** the Bridge worker is active, **Then** it maintains a single open SDK enterprise session across consecutive items, closing the session only after a configurable idle threshold (default 5 seconds of empty queue) or upon encountering a fatal DLL error.
-2. **Given** an SDK function call that encounters a database lock in CONTPAQi Comercial Premium, **When** execution exceeds the 8-second transaction timeout limit, **Then** the worker cancels the transaction attempt, logs an `SDK_TIMEOUT` error, increments the item retry count, and releases the execution semaphore.
-3. **Given** 3 consecutive transaction failures due to DLL crashes or persistent database locks, **When** the threshold is reached, **Then** the Circuit Breaker trips to `OPEN` state for 15 seconds, pausing further SDK execution, updating the connection health badge on the Dashboard to `DEGRADED/PAUSED`, and auto-testing recovery in `HALF-OPEN` state.
+1. **Given** ráfagas consecutivas en la cola, **When** el worker las procesa, **Then** reutiliza la sesión abierta de empresa (`_isCompanyOpen = true`), cerrándola únicamente tras 3600s de inactividad o al detener la aplicación.
+2. **Given** 3 fallos o bloqueos de tabla seguidos en CONTPAQi, **When** se alcanza el umbral, **Then** el Circuit Breaker conmuta a estado `OPEN` durante 15 segundos deteniendo el consumo de cola y actualizando los indicadores de salud.
 
 ---
 
-### User Story 4 - High-Speed Read-Only SQL Pipeline & Decoupled Telemetry (Priority: P4)
+### User Story 4 - High-Speed Read-Only SQL Pipeline (Priority: P4)
 
-As an External Client Application, I want to query CONTPAQi master catalogs (products, clients, warehouses, concepts) and inventory balances directly via high-speed read endpoints on the Bridge, and receive decoupled Webhook / WebSocket notifications for async writes.
-
-**Why this priority**: Read operations represent the majority of ERP interactions. Direct SQL reads with non-blocking hints bypass SDK thread locks, returning catalog and stock data in milliseconds without interfering with write transactions.
-
-**Independent Test**: Can be tested by executing concurrent HTTP `GET` requests to `/api/v1/catalogs/products` and `/api/v1/inventory/stocks` while an SDK write batch is processing, verifying that read responses return in under 50 ms without blocking or being blocked by SDK operations.
+Como Aplicación Cliente, quiero consultar catálogos de productos, clientes, almacenes y existencias directamente por SQL sin pasar por el SDK nativo de escritura.
 
 **Acceptance Scenarios**:
-
-1. **Given** a read query request for product catalog or stock availability, **When** an external application calls `GET /api/v1/catalogs/*` or `GET /api/v1/inventory/*`, **Then** the Bridge executes a direct read query against SQL Server `adm*` tables using `READ UNCOMMITTED` hints and returns formatted JSON in under 50 ms.
-2. **Given** an external client application configured with Webhook subscriptions, **When** an Outbox transaction transitions to `COMPLETED` or `DEAD_LETTER_QUEUE`, **Then** the Bridge delivers an asynchronous HTTP POST notification containing the `TransactionId`, `ClientAppId`, final status, and CONTPAQi document metadata to the client's registered callback URL.
+1. **Given** una consulta GET a `/api/v1/catalogs/*` o `/api/v1/inventory/*`, **When** se ejecuta la llamada, **Then** el Bridge realiza una lectura directa en SQL Server `adm*` usando sugerencias no bloqueantes (`READ UNCOMMITTED` / `NOLOCK`), retornando el resultado en < 50 ms.
 
 ---
 
-### Edge Cases
-
-- **What happens when the CONTPAQi server reboots mid-transaction?**  
-  The current in-flight SDK call times out after 8 seconds. The transaction is rolled back, the SDK session is reset, and the item remains in `PENDING` state in the local SQLite Outbox for retry upon worker auto-reconnect.
-- **What happens if an external application sends an invalid JSON command?**  
-  The Bridge's API gateway rejects the request immediately with HTTP `400 Bad Request` and structured validation error details, without persisting invalid items into the Outbox queue.
-- **What happens if the client's Webhook endpoint is unreachable when a transaction finishes?**  
-  Webhook deliveries use an independent retry queue with exponential backoff (up to 3 retries). Webhook failures do not impact the core ERP transaction state or Outbox queue.
-- **What happens if a duplicate transaction command is submitted?**  
-  Every command accepts an optional `idempotency_key`. The Bridge checks the local Outbox database before inserting; if the key exists, it returns the existing transaction status without re-queueing SDK execution.
-
----
-
-## Requirements *(mandatory)*
+## 4. Requirements & Data Contracts
 
 ### Functional Requirements
 
-- **FR-001**: The System MUST operate as a completely standalone, application-agnostic integration microservice, exposing a standardized REST/gRPC API contract for ERP write and read commands decoupled from any specific client business logic.
-- **FR-002**: The System MUST host an embedded Real-Time Web Monitoring Dashboard (built on Kestrel + WebSockets) accessible on a configurable port (e.g. `http://host:5055`), providing live charts for Throughput (ops/sec), Queue Depth, SDK Latency, Error/Retry Rates, and Connection Health.
-- **FR-003**: The System MUST include an interactive Dead Letter Queue (DLQ) Management Panel within the Web Dashboard allowing administrators to inspect failed transaction payloads, edit JSON payloads inline, re-queue items for immediate execution, or purge items.
-- **FR-004**: The System MUST isolate all CONTPAQi SDK write invocations (`MGW_SDK.dll` / `MGWServicios`) inside a dedicated 32-bit (.NET x86) Worker Process executing on a single-threaded apartment (STA) thread pool controlled by `SemaphoreSlim(1,1)` and `System.Threading.Channels`.
-- **FR-005**: The System MUST strictly enforce that ALL database write operations (creating documents, adding movements, associating lot numbers, affecting stock balances) occur exclusively through official CONTPAQi SDK functions (`fInicializaSDK`, `fAbreEmpresa`, `fAltaDocumento`, `fAltaMovimiento`, `fAltaMovimientoSeriesCapas`, `fAfectaDocto_Param`/`fAfectaDocto`, `fCierraEmpresa`, `fTerminaSDK`). Direct SQL `INSERT`, `UPDATE`, or `DELETE` statements on CONTPAQi `adm*` tables are strictly prohibited.
-- **FR-006**: The System MUST perform all read-only catalog, document, and stock layer lookups directly against SQL Server tables (`admProductos`, `admClientes`, `admAlmacenes`, `admConceptos`, `admCapasProducto`, `admExistenciaCapa`, `admDocumentos`, `admMovimientos`) using non-blocking SQL read hints (`READ UNCOMMITTED` / `WITH (NOLOCK)`).
-- **FR-007**: The System MUST persist all incoming transaction commands in a local transactional SQLite database (`bridge_outbox.db`) to guarantee durable Outbox queuing, zero message loss during network partitions, and full audit logging.
-- **FR-008**: The System MUST support SDK session reuse during queue processing bursts, maintaining an open enterprise session (`fAbreEmpresa`) while items exist in the queue and closing it only after a 5-second idle threshold or upon unrecoverable DLL error.
-- **FR-009**: The System MUST enforce a strict per-transaction SDK execution timeout of 8 seconds (configurable between 5 and 10 seconds). If an SDK function execution exceeds this timeout, the operation MUST be aborted, logged, and queued for retry.
-- **FR-010**: The System MUST implement an automatic Circuit Breaker that transitions to `OPEN` state for 15 seconds after 3 consecutive transaction timeouts or SDK exception crashes, pausing queue execution and updating Dashboard health badges.
-- **FR-011**: The System MUST execute an exponential backoff retry strategy with random jitter (retry delays: 1s, 5s, 15s, 60s, 300s) for transient SDK errors (e.g. table locks, temporary concurrency collisions) up to a maximum of 5 retry attempts.
-- **FR-012**: The System MUST transition any transaction failing all 5 retry attempts to `DEAD_LETTER_QUEUE` status, preserving full execution history, error codes, and original payload for inspection in the Web Dashboard.
-- **FR-013**: The System MUST deliver asynchronous Webhook notifications to client-specified callback URLs (`callback_url`) upon transaction completion or DLQ transition, accompanied by live WebSocket telemetry streaming to the Web Dashboard.
-- **FR-014**: The System MUST load all operational parameters (SDK directory path, SQL Server connection strings, Dashboard HTTP port, timeout limits, max retry counts) from a centralized configuration file (`appsettings.json`) or Environment Variables.
-- **FR-015**: The System MUST log all API requests, SDK function calls, and error events in structured JSON format (Serilog) with a unique `CorrelationId` and `TransactionId`.
+- **FR-001**: Microservicio autónomo e independiente en .NET 8 (x86), ejecutable en Sesión 2 interactiva.
+- **FR-002**: Dashboard Web integrado en puerto 5005 mediante Kestrel + SignalR.
+- **FR-003**: Panel de administración de Dead Letter Queue (DLQ) para edición JSON y reintento manual.
+- **FR-004**: Hilo de trabajo único de apartamento STA (`ApartmentState.STA`) para la ejecución nativa P/Invoke de `MGW_SDK.dll`.
+- **FR-005**: Escrituras prohibidas en SQL directo; todas las altas de documentos y movimientos DEBEN usar el SDK oficial (`fAltaDocumento`, `fAltaMovimiento`, etc.).
+- **FR-006**: Lecturas directas de catálogos y existencias vía SQL Server (`admProductos`, `admClientes`, `admAlmacenes`, `admExistenciaCapa`) con `NOLOCK`.
+- **FR-007**: Persistencia Outbox durable en SQLite local (`bridge_outbox.db`).
+- **FR-008**: Manejo de `fInicializaSDK` al inicio del servicio y `fTerminaSDK` al apagarlo.
+- **FR-009**: Inclusión de `NativeLibrary.SetDllImportResolver` para carga robusta de DLLs en Windows.
+- **FR-010**: Manejo explícito de error `126209` como éxito en `fAbreEmpresa`.
+
+### Core Data Payload Contract (`DOCUMENT_CREATE`)
+
+```json
+{
+  "client_app_id": "polyconecta-app",
+  "command_type": "DOCUMENT_CREATE",
+  "payload": {
+    "codigo_concepto": "1",
+    "codigo_cliente_proveedor": "2441MXN",
+    "fecha": "09/14/2026",
+    "referencia": "COT-2026-001",
+    "observaciones": "Cotización emitida desde PolyConecta",
+    "movimientos": [
+      {
+        "codigo_producto": "SOPORTETEC",
+        "unidades": 1.0,
+        "precio": 250.00,
+        "codigo_almacen": "1"
+      }
+    ]
+  }
+}
+```
 
 ---
 
-### Key Entities
+## 5. Success Criteria
 
-- **BridgeTransaction**: Primary record representing an ERP write or read command received by the Bridge.
-  - *Attributes*: `TransactionId` (UUID), `CorrelationId` (UUID), `ClientAppId` (String), `IdempotencyKey` (String, Nullable), `CommandType` (Enum: `DOCUMENT_CREATE`, `MOVEMENT_ADD`, `LOT_ASSOCIATION`, `DOCUMENT_AFFECT`), `PayloadJson` (Text), `CallbackUrl` (String, Nullable), `Status` (Enum: `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `DEAD_LETTER_QUEUE`), `RetryCount` (Integer), `MaxRetries` (Integer), `NextAttemptAt` (Timestamp), `ContpaqiDocId` (Integer, Nullable), `ContpaqiFolio` (String, Nullable), `CreatedAt` (Timestamp), `UpdatedAt` (Timestamp).
-- **TransactionLog**: Audit entry capturing every SDK execution step or error.
-  - *Attributes*: `LogId` (UUID), `TransactionId` (UUID), `CorrelationId` (UUID), `AttemptNumber` (Integer), `SdkFunctionName` (String), `SdkErrorCode` (Integer), `ErrorMessage` (Text), `ExecutionDurationMs` (Long), `Timestamp` (Timestamp).
-- **MetricSnapshot**: Aggregated real-time metrics captured for Web Dashboard visual charts.
-  - *Attributes*: `SnapshotId` (Long), `Timestamp` (Timestamp), `ThroughputOpsPerSec` (Double), `QueueDepth` (Integer), `AverageSdkLatencyMs` (Double), `ErrorRatePercent` (Double), `ActiveSdkSession` (Boolean), `CircuitState` (Enum: `CLOSED`, `OPEN`, `HALF_OPEN`).
-- **WebhookDelivery**: Record of callback notifications dispatched to external client applications.
-  - *Attributes*: `DeliveryId` (UUID), `TransactionId` (UUID), `CallbackUrl` (String), `HttpStatus` (Integer, Nullable), `ResponseBody` (Text, Nullable), `AttemptCount` (Integer), `DeliveredAt` (Timestamp, Nullable).
-
----
-
-## Success Criteria *(mandatory)*
-
-### Measurable Outcomes
-
-- **SC-001**: **Agnostic API Acknowledgment Latency**: 100% of valid transaction requests sent to `POST /api/v1/transactions` return HTTP `202 Accepted` confirmations with unique transaction IDs in under 100 ms.
-- **SC-002**: **Outbox Processing Throughput**: During queue processing bursts with an active SDK session, the Bridge processes queued transactions at a minimum throughput of 10 operations per second (>= 600 operations / minute).
-- **SC-003**: **Real-Time Dashboard Streaming Latency**: The embedded Web Dashboard updates visual charts (throughput, queue depth, latency, health status) via WebSockets within 500 ms of underlying state changes.
-- **SC-004**: **Transaction Timeout Enforcement**: No single hanging or blocked SDK function call exceeds 8 seconds before being safely cancelled and scheduled for retry.
-- **SC-005**: **Read Query Latency**: Direct SQL catalog and inventory read queries (`GET /api/v1/catalogs/*`, `GET /api/v1/inventory/*`) return structured JSON results in under 50 ms for 95% of requests.
-- **SC-006**: **Zero Message Loss & DLQ Auditability**: 100% of validated transactions submitted to the Bridge are either processed into CONTPAQi or held in the DLQ with full diagnostic history and inline editing capabilities.
-- **SC-007**: **Webhook Delivery Reliability**: 99.9% of Webhook callback notifications are delivered to client callback URLs within 2 seconds of transaction completion.
-
----
-
-## Assumptions
-
-- **Target ERP Version**: CONTPAQi Comercial Premium v10.0.0 or higher installed on Windows Server / OS with valid license file and network access to SQL Server.
-- **Service Deployment**: The Bridge runs as a standalone 32-bit (.NET 8/9 x86) Windows Service or console process hosting Kestrel web server for API endpoints and Web Dashboard.
-- **Database Access**: Direct read-only SQL Server connection credentials to CONTPAQi `adm*` company databases.
-- **Decoupled Architecture**: External client applications interface with the Bridge exclusively via HTTP/REST endpoints or Webhook callbacks, with no direct shared codebase or binary dependency.
+- **SC-001**: Respuesta del endpoint POST `/api/v1/transactions` en < 100 ms (`202 Accepted`).
+- **SC-002**: Procesamiento en cola Outbox a velocidad de 10-20 operaciones por segundo.
+- **SC-003**: Invocación nativa del SDK de CONTPAQi sin cierres inesperados por `fTerminaSDK` o `0xc0000005`.
+- **SC-004**: Apertura exitosa de empresa reconociendo el código `126209` como sesión activa válida.
+- **SC-005**: Monitoreo continuo de salud vía GET `/health` reportando `status: Healthy`, `sdk_initialized: true`, `sql_connected: true`.

@@ -56,25 +56,18 @@ Para cada especificación se proporciona un **Prompt de Co-Creación** diseñado
 
 #### SPEC-001: `001-integration-bridge-contpaqi`
 * **Tipo:** Fundación Técnica (Middleware Integration Bridge)
-* **Objetivo:** Construir el servicio Windows (.NET x86) que expone una API REST/JSON interna con cola FIFO síncrona hilo a hilo (`SemaphoreSlim`) para encapsular todas las llamadas Win32 al `SDK_CONTPAQ.dll` y realizar lecturas directas a SQL Server (`adm*`).
-* **Fundamentación Técnica:** Principios I, II, VII y VIII de la Constitución v1.3.0; `Referencia_SDK_CONTPAQi.md` y `Referencia_BD_CONTPAQi.md`.
-* **Decisiones Clave a Resolver:** Tiempos de timeout del SDK, funciones Win32 (`fInicializarSDK`, `fAbreEmpresa`, `fAltaDocumento`, `fAltaMovimiento`), persistencia Outbox FIFO y manejo de errores con DLQ.
+* **Estado:** ✅ Especificación Validada & Refactorizada (Feedback de Sesión Incorporado)
+* **Objetivo:** Servicio Windows (.NET 8 x86) ejecutable en Sesión 2 interactiva que expone una API REST/JSON interna con cola FIFO durable en SQLite Outbox (`bridge_outbox.db`) y procesamiento en hilo único de apartamento STA (`ApartmentState.STA`). Encapsula de forma segura todas las invocaciones Win32 a `MGW_SDK.dll` y ejecuta consultas de lectura directa de catálogos y existencias a SQL Server (`adm*`).
+* **Fundamentación Técnica:** Principios I, II, VII y VIII de la Constitución v1.4.0; [Referencia_SDK_CONTPAQi.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/contpaq/Referencia_SDK_CONTPAQi.md) y [Referencia_BD_CONTPAQi.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/contpaq/Referencia_BD_CONTPAQi.md).
+* **Decisiones Clave & Reglas Empíricas Incorporadas:**
+  1. **Ciclo de Vida Único de SDK**: `fInicializaSDK()` se ejecuta **una sola vez** por proceso; `fTerminaSDK()` solo se llama al apagar el servicio para evitar corrupción de memoria Borland/CLR (`0xc0000005`).
+  2. **Carga Nativa de DLLs**: Uso de `NativeLibrary.SetDllImportResolver` y `SetCurrentDirectory` a `C:\Program Files (x86)\Compac\COMERCIAL` para resolución limpia de dependencias (evitando `DllNotFoundException` Win32 error 126/127).
+  3. **Manejo del Código `126209`**: Reconocimiento de error 126209 como estado **exitoso** de empresa previamente abierta por la sesión activa de CONTPAQi.
+  4. **Protección `fAfectaDocto_Param`**: Afectación resguardada en try-catch garantizando la persistencia inmutable del `DocId` y `Folio` generados.
+  5. **Ejecución en Sesión 2**: Despliegue mediante tarea programada interactiva `ContpaqBridgeTask` en entorno de 32 bits (`win-x86`).
 
-> [!TIP]
-> **Prompt Interactivo para Spec Kit:**
-> ```text
-> Actúa como Arquitecto de Software Sr. e inicia el proceso /speckit-specify para la especificación '001-integration-bridge-contpaqi'.
-> 
-> Revisa la Constitución v1.3.0 (.specify/memory/constitution.md), especialmente los Principios VII y VIII. Fundamenta todas las decisiones técnicas en docs/contpaq/Referencia_SDK_CONTPAQi.md y docs/contpaq/Referencia_BD_CONTPAQi.md. Si alguna función del SDK o tabla de SQL Server resulta ambigua o incompleta, realiza búsquedas web antes de proponer soluciones.
-> 
-> Guíame en una sesión interactiva donde me hagas de 3 a 5 preguntas concretas sobre:
-> 1. Mapeo exacto de funciones SDK (fInicializarSDK, fAbreEmpresa, fAltaDocumento, fAltaMovimiento) y lecturas directas SQL a tablas adm*.
-> 2. Control de concurrencia single-threaded (SemaphoreSlim/Mutex) y tiempos de timeout por transacción.
-> 3. Persistencia de la cola Outbox (Redis/SQLite) y estrategia de reintentos asíncronos ante caídas de CONTPAQi.
-> 4. Estructura de logs de auditoría y alertas de transacciones fallidas.
-> 
-> Con mis respuestas, redacta el archivo spec.md en .specify/features/001-integration-bridge-contpaqi/spec.md.
-> ```
+> [!NOTE]
+> **Especificación Actualizada:** La especificación detallada y refactorizada con estos hallazgos se encuentra disponible en [.specify/features/001-integration-bridge-contpaqi/spec.md](file:///Users/emilio/Development/Sandbox/Polyconecta/.specify/features/001-integration-bridge-contpaqi/spec.md).
 
 ---
 
