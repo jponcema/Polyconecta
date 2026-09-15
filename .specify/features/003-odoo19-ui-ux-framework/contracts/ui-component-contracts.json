@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PolyConecta Odoo 19 UI Component Contracts",
+  "description": "JSON Schemas for Smart Buttons, Pipeline Status Bar, and Chatter Message contracts in SPEC-003",
+  "type": "object",
+  "definitions": {
+    "SmartButton": {
+      "type": "object",
+      "required": ["id", "label", "countBadge", "targetRoute"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string", "example": "Manufacturas" },
+        "countBadge": { "type": "integer", "minimum": 0 },
+        "icon": { "type": "string", "example": "gear" },
+        "targetRoute": { "type": "string", "example": "/manufactura/orders?pedido=3192389" }
+      }
+    },
+    "StatusPipeline": {
+      "type": "object",
+      "required": ["activeStage", "stages"],
+      "properties": {
+        "activeStage": { "type": "string", "example": "En progreso" },
+        "stages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["Borrador", "Autorizado", "En progreso", "Hecho"]
+        }
+      }
+    },
+    "ChatterEntry": {
+      "type": "object",
+      "required": ["messageId", "documentId", "authorName", "messageType", "bodyText", "timestamp"],
+      "properties": {
+        "messageId": { "type": "string", "format": "uuid" },
+        "documentId": { "type": "string", "example": "3192389" },
+        "authorName": { "type": "string", "example": "Alejandro Ponce" },
+        "messageType": { "type": "string", "enum": ["UserComment", "SystemAudit", "ErpSyncLog"] },
+        "bodyText": { "type": "string", "example": "Se carga el pedido de venta polyconecta" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

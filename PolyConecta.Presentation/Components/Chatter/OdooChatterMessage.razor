@@ -1,0 +1,13 @@
+<div class="p-2 border rounded bg-light mb-2 font-monospace small">
+    <div class="d-flex justify-content-between text-muted" style="font-size: 0.725rem;">
+        <span class="fw-bold text-dark">@Author</span>
+        <span>@Timestamp</span>
+    </div>
+    <div class="text-muted mt-1">@BodyText</div>
+</div>
+
+@code {
+    [Parameter] public string Author { get; set; } = string.Empty;
+    [Parameter] public string Timestamp { get; set; } = string.Empty;
+    [Parameter] public string BodyText { get; set; } = string.Empty;
+}

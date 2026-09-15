@@ -1,19 +1,24 @@
-# C# / .NET Ignore patterns
+# Build and Output Directories (C# / .NET)
 bin/
 obj/
+out/
+dist/
+build/
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
 packages/
 .vs/
 .vscode/
 
-# SQLite & local runtime storage
-*.db
-*.sqlite
-*.sqlite3
-
-# OS generated files
+# Dependencies & Temporary Files
+node_modules/
+*.log
+*.tmp
+*.swp
 .DS_Store
 Thumbs.db
+
+# Environment & Secrets
+.env
+.env.local
+*.secret.json

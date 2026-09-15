@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PolyConecta Core Domain Schemas",
+  "description": "JSON Schemas for Rollo Maestro, Orders, Locations, and Mass-Balance entities in SPEC-002",
+  "type": "object",
+  "definitions": {
+    "RolloMaestro": {
+      "type": "object",
+      "required": [
+        "id",
+        "subOrderId",
+        "folio",
+        "lotNumber",
+        "productSku",
+        "grossWeightKg",
+        "tareWeightKg",
+        "netWeightKg",
+        "lengthMeters",
+        "gaugeMicron",
+        "widthMm",
+        "machineId",
+        "shift",
+        "operatorId",
+        "status",
+        "locationCode"
+      ],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "subOrderId": { "type": "string", "format": "uuid" },
+        "folio": {
+          "type": "string",
+          "pattern": "^EX-[0-9]{2}-[0-9]{6}-[0-9]{6}$",
+          "example": "EX-01-260910-042747"
+        },
+        "lotNumber": { "type": "string", "maxLength": 30 },
+        "productSku": { "type": "string", "maxLength": 30 },
+        "grossWeightKg": { "type": "number", "minimum": 0.001 },
+        "tareWeightKg": { "type": "number", "minimum": 0.0 },
+        "netWeightKg": { "type": "number", "minimum": 0.001 },
+        "lengthMeters": { "type": "number", "minimum": 0.1 },
+        "gaugeMicron": { "type": "number", "minimum": 1.0 },
+        "widthMm": { "type": "number", "minimum": 10.0 },
+        "dynesCm": { "type": "number", "default": 38.0 },
+        "machineId": { "type": "string" },
+        "shift": { "type": "string", "enum": ["Turno 1", "Turno 2", "Turno 3"] },
+        "operatorId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Available", "In_Use", "Consumed", "Quarantine", "Scrap"]
+        },
+        "locationCode": { "type": "string", "example": "PIM/Stock/MP" }
+      }
+    },
+    "SubOrder": {
+      "type": "object",
+      "required": [
+        "id",
+        "masterOrderId",
+        "folioOf",
+        "processType",
+        "machineId",
+        "status",
+        "plannedQtyKg"
+      ],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "masterOrderId": { "type": "string", "format": "uuid" },
+        "folioOf": { "type": "string", "example": "OF-EXT-2026-0421-1" },
+        "processType": { "type": "string", "enum": ["EXT", "IMP", "BOL"] },
+        "machineId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["Borrador", "Programado", "En_Proceso", "Control_Calidad", "Finalizado", "Scrap"]
+        },
+        "plannedQtyKg": { "type": "number", "minimum": 0.1 },
+        "producedQtyKg": { "type": "number", "default": 0.0 },
+        "scrapQtyKg": { "type": "number", "default": 0.0 }
+      }
+    },
+    "PolyLocation": {
+      "type": "object",
+      "required": [
+        "id",
+        "cidAlmacenContpaq",
+        "locationCode",
+        "locationName",
+        "plantCode",
+        "warehouseType"
+      ],
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "cidAlmacenContpaq": { "type": "integer" },
+        "locationCode": { "type": "string", "example": "PIM/Stock/MP" },
+        "locationName": { "type": "string" },
+        "plantCode": { "type": "string", "enum": ["PIM", "STC", "MTM"] },
+        "warehouseType": {
+          "type": "string",
+          "enum": ["RawMaterial", "Production", "FinishedGoods", "Quarantine", "Transit"]
+        }
+      }
+    }
+  }
+}

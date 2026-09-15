@@ -1,0 +1,70 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PolyConecta Warehouse & Routing API",
+    "version": "1.0.0",
+    "description": "API endpoints for 2-step location transfers, stock balances, and CONTPAQi admAlmacenes alignment"
+  },
+  "paths": {
+    "/api/v1/locations": {
+      "get": {
+        "summary": "List all PolyConecta 2-step locations and mapped CONTPAQi admAlmacenes IDs",
+        "responses": {
+          "200": {
+            "description": "List of active locations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "./domain-schema.json#/definitions/PolyLocation" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transfers/move": {
+      "post": {
+        "summary": "Execute shop-floor material stock transfer between 2-step locations",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rollFolio", "sourceLocationCode", "targetLocationCode"],
+                "properties": {
+                  "rollFolio": { "type": "string", "example": "EX-01-260910-042747" },
+                  "sourceLocationCode": { "type": "string", "example": "PIM/Produccion" },
+                  "targetLocationCode": { "type": "string", "example": "PIM/Stock/PT" },
+                  "operatorId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stock transfer successfully registered and queued for CONTPAQi Outbox sync",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transferId": { "type": "string", "format": "uuid" },
+                    "status": { "type": "string", "example": "Success" },
+                    "outboxMessageId": { "type": "string", "format": "uuid" }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Quality Gate Hard-Stop violation (material in Quarantine blocked from transfer)"
+          }
+        }
+      }
+    }
+  }
+}

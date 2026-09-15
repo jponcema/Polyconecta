@@ -1,0 +1,67 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PolyConecta Order Hierarchy & Kanban API",
+    "version": "1.0.0",
+    "description": "API endpoints for Master Orders (OM), Process Sub-Orders (OF-EXT, OF-IMP, OF-BOL), and Kanban status pipelines"
+  },
+  "paths": {
+    "/api/v1/orders/master": {
+      "post": {
+        "summary": "Create a Master Order (OM) linked to a CONTPAQi Sales Order (Pedido)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["cidDocumentoPedido", "customerCode", "ptSku", "targetQuantityKg"],
+                "properties": {
+                  "cidDocumentoPedido": { "type": "integer" },
+                  "customerCode": { "type": "string" },
+                  "ptSku": { "type": "string" },
+                  "targetQuantityKg": { "type": "number", "minimum": 0.1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Master Order created and process sub-orders auto-generated in Borrador state"
+          }
+        }
+      }
+    },
+    "/api/v1/orders/sub-orders/{id}/status": {
+      "patch": {
+        "summary": "Transition Sub-Order status along Odoo 19 Kanban pipeline",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["newStatus"],
+                "properties": {
+                  "newStatus": {
+                    "type": "string",
+                    "enum": ["Borrador", "Programado", "En_Proceso", "Control_Calidad", "Finalizado", "Scrap"]
+                  },
+                  "notes": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status updated successfully" },
+          "400": { "description": "Invalid state transition or Mass Balance audit failure" }
+        }
+      }
+    }
+  }
+}

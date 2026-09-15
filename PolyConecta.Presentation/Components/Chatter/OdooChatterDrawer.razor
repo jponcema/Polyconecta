@@ -1,0 +1,71 @@
+<div class="border rounded bg-white shadow-sm d-flex flex-column" style="width: 340px; flex-shrink: 0; min-height: 480px;">
+    <!-- Chatter Header Buttons -->
+    <div class="p-2 border-bottom d-flex align-items-center justify-content-between bg-light flex-wrap gap-1">
+        <button class="btn btn-sm text-white fw-semibold px-2 py-1" style="background-color: #714B67; font-size: 0.78rem;">Enviar mensaje</button>
+        <button class="btn btn-sm btn-light border text-dark fw-medium px-2 py-1" style="font-size: 0.78rem;">Registrar una nota</button>
+        <button class="btn btn-sm btn-light border text-dark fw-medium px-2 py-1" style="font-size: 0.78rem;">Actividad</button>
+
+        <div class="d-flex align-items-center gap-2 text-muted small ms-auto">
+            <i class="bi bi-search cursor-pointer" title="Buscar"></i>
+            <i class="bi bi-paperclip cursor-pointer" title="Adjuntar"></i>
+            <span class="small" title="Seguidores"><i class="bi bi-person me-1"></i>0</span>
+        </div>
+    </div>
+    
+    <!-- Feed -->
+    <div class="p-3 overflow-y-auto flex-grow-1 d-flex flex-column gap-3" style="max-height: 480px;">
+        <div class="text-center position-relative my-1">
+            <hr class="m-0 text-muted" />
+            <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 small text-muted fw-bold" style="font-size:0.7rem;">Hoy</span>
+        </div>
+
+        @foreach (var msg in Messages)
+        {
+            <div class="d-flex gap-2">
+                <div class="rounded bg-purple text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px; height:28px; font-size:0.8rem; background-color:#714B67;">
+                    A
+                </div>
+                <div class="bg-light border rounded p-2 flex-grow-1 small">
+                    <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.725rem;">
+                        <span class="fw-bold text-dark">@msg.Author</span>
+                        <span>@msg.Timestamp</span>
+                    </div>
+                    <div class="text-dark">@msg.Text</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Chatter Footer Input -->
+    <div class="p-2 border-top bg-light">
+        <div class="input-group input-group-sm">
+            <input type="text" class="form-control" placeholder="Escribir nota..." @bind="newMsgText" @onkeydown="OnKeyDown" />
+            <button class="btn text-white fw-semibold" style="background-color:#714B67;" @onclick="Send">Send</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class ChatterEntry
+    {
+        public string Author { get; set; } = "Administrator";
+        public string Timestamp { get; set; } = "5:15 p.m.";
+        public string Text { get; set; } = string.Empty;
+    }
+
+    [Parameter] public List<ChatterEntry> Messages { get; set; } = new();
+
+    private string newMsgText = string.Empty;
+
+    private void Send()
+    {
+        if (string.IsNullOrWhiteSpace(newMsgText)) return;
+        Messages.Add(new ChatterEntry { Author = "Administrator", Timestamp = DateTime.Now.ToString("h:mm tt"), Text = newMsgText });
+        newMsgText = string.Empty;
+    }
+
+    private void OnKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") Send();
+    }
+}

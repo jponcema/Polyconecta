@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# Contpaq.Bridge - Build Script for Windows 32-bit (win-x86) Package on macOS
+# PolyConecta.Contpaq - Build Script for Windows 32-bit (win-x86) Package
 # ==============================================================================
 # Usage:
 #   chmod +x scripts/build.sh
@@ -11,11 +11,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-PROJECT_PATH="src/Contpaq.Bridge/Contpaq.Bridge.csproj"
+PROJECT_PATH="PolyConecta.Contpaq/PolyConecta.Contpaq.csproj"
 OUTPUT_DIR="./dist/win-x86"
 
 echo "================================================================="
-echo "🛠️  Building Contpaq.Bridge for Windows 32-bit (win-x86)..."
+echo "🛠️  Building PolyConecta.Contpaq Bridge for Windows 32-bit (win-x86)..."
 echo "Project: ${PROJECT_PATH}"
 echo "Output Directory: ${OUTPUT_DIR}"
 echo "================================================================="

@@ -1,0 +1,27 @@
+<div class="d-flex gap-2 flex-wrap">
+    @foreach (var btn in Buttons)
+    {
+        <div class="border rounded p-2 bg-white d-flex align-items-center gap-2 cursor-pointer shadow-sm" style="cursor: pointer;" @onclick="() => OnButtonClick(btn.TargetRoute)">
+            <i class="@btn.IconClass fs-4 text-primary"></i>
+            <div>
+                <div class="fw-bold text-dark fs-6" style="line-height:1;">@btn.CountBadge</div>
+                <div class="text-muted small" style="font-size: 0.7rem; text-transform: uppercase;">@btn.Label</div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    public class SmartButtonModel
+    {
+        public string Label { get; set; } = string.Empty;
+        public int CountBadge { get; set; }
+        public string IconClass { get; set; } = "bi bi-box";
+        public string TargetRoute { get; set; } = string.Empty;
+    }
+
+    [Parameter] public List<SmartButtonModel> Buttons { get; set; } = new();
+    [Parameter] public EventCallback<string> OnSmartNavigate { get; set; }
+
+    private void OnButtonClick(string route) => OnSmartNavigate.InvokeAsync(route);
+}

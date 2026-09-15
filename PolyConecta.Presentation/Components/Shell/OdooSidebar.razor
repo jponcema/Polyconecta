@@ -1,0 +1,50 @@
+@inject PolyConecta.Presentation.Services.UiAppShellState ShellState
+
+<aside class="app-sidebar @(ShellState.IsSidebarCollapsed ? "collapsed" : "")" style="width: @(ShellState.IsSidebarCollapsed ? "54px" : "220px"); background: white; border-right: 1px solid #E2E8F0; transition: width 0.2s ease;">
+    <div class="sidebar-header d-flex align-items-center justify-content-end p-2 border-bottom">
+        <button class="btn btn-sm btn-light border" @onclick="Toggle">
+            <i class="bi @(ShellState.IsSidebarCollapsed ? "bi-arrow-right-short" : "bi-arrow-left-short") fs-5"></i>
+        </button>
+    </div>
+    <nav class="p-2 d-flex flex-column gap-1">
+        <button class="btn btn-text text-start d-flex align-items-center gap-2 p-2 w-100 @(ShellState.ActiveModule == "Inicio" ? "fw-bold text-primary bg-light" : "")" @onclick='() => Select("dashboard", "Inicio", "Inicio / Dashboard")'>
+            <i class="bi bi-speedometer2 fs-5"></i>
+            @if (!ShellState.IsSidebarCollapsed) { <span>Inicio</span> }
+        </button>
+        <button class="btn btn-text text-start d-flex align-items-center gap-2 p-2 w-100 @(ShellState.ActiveModule == "Pedidos" ? "fw-bold text-primary bg-light" : "")" @onclick='() => Select("pedidos-list", "Pedidos", "Listado de Pedidos contpaq")'>
+            <i class="bi bi-cart-check-fill fs-5"></i>
+            @if (!ShellState.IsSidebarCollapsed) { <span>Pedidos (Contpaq)</span> }
+        </button>
+        <button class="btn btn-text text-start d-flex align-items-center gap-2 p-2 w-100 @(ShellState.ActiveModule == "Manufactura" ? "fw-bold text-primary bg-light" : "")" @onclick='() => Select("manufactura-list", "Manufactura", "Listado de Manufacturas")'>
+            <i class="bi bi-gear-wide-connected fs-5"></i>
+            @if (!ShellState.IsSidebarCollapsed) { <span>Manufactura</span> }
+        </button>
+        <button class="btn btn-text text-start d-flex align-items-center gap-2 p-2 w-100 @(ShellState.ActiveModule == "Calidad" ? "fw-bold text-primary bg-light" : "")" @onclick='() => Select("calidad", "Calidad", "Control de Calidad")'>
+            <i class="bi bi-shield-check fs-5"></i>
+            @if (!ShellState.IsSidebarCollapsed) { <span>Calidad</span> }
+        </button>
+        <button class="btn btn-text text-start d-flex align-items-center gap-2 p-2 w-100 @(ShellState.ActiveModule == "Handheld" ? "fw-bold text-primary bg-light" : "")" @onclick='() => Select("handheld", "Handheld", "Terminal Handheld Báscula")'>
+            <i class="bi bi-qr-code-scan fs-5"></i>
+            @if (!ShellState.IsSidebarCollapsed) { <span>Handheld Báscula</span> }
+        </button>
+        
+        <hr class="my-2" />
+        
+        <button class="btn btn-text text-start d-flex align-items-center gap-2 p-2 w-100 @(ShellState.ActiveModule == "Configuracion" ? "fw-bold text-primary bg-light" : "")" @onclick='() => Select("configuracion", "Configuracion", "Configuración del Sistema")'>
+            <i class="bi bi-sliders fs-5"></i>
+            @if (!ShellState.IsSidebarCollapsed) { <span>Configuracion</span> }
+        </button>
+    </nav>
+</aside>
+
+@code {
+    [Parameter] public EventCallback<string> OnNavigate { get; set; }
+
+    private void Toggle() => ShellState.ToggleSidebar();
+
+    private void Select(string screenId, string module, string breadcrumb)
+    {
+        ShellState.SetActiveModule(module, breadcrumb);
+        OnNavigate.InvokeAsync(screenId);
+    }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Odoo 19 Enterprise UI Component Contract",
+  "description": "Specifies visual layout, app grid launcher, kanban, list, and form view contracts",
+  "type": "object",
+  "properties": {
+    "appLauncher": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "icon": { "type": "string" },
+          "themeColor": { "type": "string" }
+        },
+        "required": ["id", "title", "icon", "themeColor"]
+      }
+    },
+    "viewModes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["kanban", "list", "form", "handheld"] }
+    },
+    "formViewPattern": {
+      "type": "object",
+      "properties": {
+        "hasSmartButtons": { "type": "boolean", "const": true },
+        "hasStatusbarPipeline": { "type": "boolean", "const": true },
+        "hasActionButtons": { "type": "boolean", "const": true }
+      },
+      "required": ["hasSmartButtons", "hasStatusbarPipeline", "hasActionButtons"]
+    }
+  },
+  "required": ["appLauncher", "viewModes", "formViewPattern"]
+}
