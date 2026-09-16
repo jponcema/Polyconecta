@@ -1,0 +1,14 @@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(MainLayout)">
+            <div class="p-4">
+                <h4 class="fw-bold">Página no encontrada</h4>
+                <p class="text-muted">La ruta solicitada no existe en PolyConecta.</p>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

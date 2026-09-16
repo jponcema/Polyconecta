@@ -14,51 +14,58 @@ public class OrderRepository : IOrderRepository
         _context = context;
     }
 
-    public async Task<MasterOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ManufacturingOrder?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.MasterOrders
-            .Include(o => o.SubOrders)
+        return await _context.ManufacturingOrders
+            .Include(o => o.ChildOrders)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MasterOrder>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ManufacturingOrder>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.MasterOrders.Include(o => o.SubOrders).ToListAsync(cancellationToken);
+        return await _context.ManufacturingOrders.Include(o => o.ChildOrders).ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(MasterOrder entity, CancellationToken cancellationToken = default)
+    public async Task AddAsync(ManufacturingOrder entity, CancellationToken cancellationToken = default)
     {
-        await _context.MasterOrders.AddAsync(entity, cancellationToken);
+        await _context.ManufacturingOrders.AddAsync(entity, cancellationToken);
     }
 
-    public void Update(MasterOrder entity)
+    public void Update(ManufacturingOrder entity)
     {
-        _context.MasterOrders.Update(entity);
+        _context.ManufacturingOrders.Update(entity);
     }
 
-    public void Delete(MasterOrder entity)
+    public void Delete(ManufacturingOrder entity)
     {
-        _context.MasterOrders.Remove(entity);
+        _context.ManufacturingOrders.Remove(entity);
     }
 
-    public async Task<MasterOrder?> GetByFolioOmAsync(string folioOm, CancellationToken cancellationToken = default)
+    public async Task<ManufacturingOrder?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {
-        return await _context.MasterOrders
-            .Include(o => o.SubOrders)
-            .FirstOrDefaultAsync(o => o.FolioOm == folioOm, cancellationToken);
+        return await _context.ManufacturingOrders
+            .Include(o => o.ChildOrders)
+            .FirstOrDefaultAsync(o => o.Name == name, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MasterOrder>> GetPendingApprovalsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ManufacturingOrder>> GetPendingApprovalsAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.MasterOrders
-            .Where(o => o.Status == "Sincronizado" || o.Status == "Draft" || o.Status == "Borrador")
+        return await _context.ManufacturingOrders
+            .Where(o => o.State == "Draft" || !o.SalesApproved || !o.CreditApproved)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MasterOrder>> GetOrdersByCustomerAsync(string customerCode, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ManufacturingOrder>> GetOrdersByCustomerAsync(string customerCode, CancellationToken cancellationToken = default)
     {
-        return await _context.MasterOrders
+        return await _context.ManufacturingOrders
             .Where(o => o.CustomerCode == customerCode)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ManufacturingOrder>> GetChildOrdersAsync(Guid parentId, CancellationToken cancellationToken = default)
+    {
+        return await _context.ManufacturingOrders
+            .Where(o => o.ParentId == parentId)
             .ToListAsync(cancellationToken);
     }
 }

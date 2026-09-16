@@ -1,0 +1,163 @@
+<div>
+    <div class="d-flex align-items-start justify-content-between mb-3">
+        <h3 class="fw-bold mb-0">Pedido de Venta CONTPAQi #PED-2026-IV214</h3>
+        <span class="badge badge-brand"><i class="bi bi-database me-1"></i> Sincronizado vía SDK (Maestro y Detalle CONTPAQi)</span>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="o_form_label_row">
+                <span class="o_form_label">Cliente Comercial</span>
+                <span class="o_form_value fw-semibold">OWENS AMERICA</span>
+            </div>
+            <div class="o_form_label_row">
+                <span class="o_form_label">RFC Cliente</span>
+                <span class="o_form_value">VAM140630FL1</span>
+            </div>
+            <div class="o_form_label_row">
+                <span class="o_form_label">Código SKU PT (CONTPAQi)</span>
+                <span class="o_form_value">PT-OWENS-TE6048-01</span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="o_form_label_row">
+                <span class="o_form_label">Fecha Promesa</span>
+                <span class="o_form_value">20/09/2026</span>
+            </div>
+            <div class="o_form_label_row">
+                <span class="o_form_label">Ruta Logística</span>
+                <span class="o_form_value">PIM &rarr; Cliente Directo</span>
+            </div>
+            <div class="o_form_label_row">
+                <span class="o_form_label">Domicilio Entrega</span>
+                <span class="o_form_value">Magallanes Oriente 517-38, Col. Treviño, Monterrey, N.L.</span>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "lines" ? "active" : "")" @onclick='() => ActiveTab = "lines"'>
+                Líneas del Pedido
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(ActiveTab == "other" ? "active" : "")" @onclick='() => ActiveTab = "other"'>
+                Ficha Técnica (Rollo + PT)
+            </button>
+        </li>
+    </ul>
+
+    @if (ActiveTab == "lines")
+    {
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr class="text-muted small">
+                    <th style="width: 20px;"></th>
+                    <th>Producto</th>
+                    <th>Descripción (CONTPAQi)</th>
+                    <th class="text-end" style="width: 100px;">Cantidad</th>
+                    <th style="width: 90px;">Unidad</th>
+                    <th class="text-end" style="width: 100px;">Valor Unit.</th>
+                    <th class="text-end" style="width: 110px;">Importe</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-muted"><i class="bi bi-grip-vertical"></i></td>
+                    <td class="fw-semibold text-primary">PT-OWENS-TE6048-01</td>
+                    <td class="small text-muted">BOLSA TERMOENCOGIBLE 60X48</td>
+                    <td class="text-end">
+                        <input type="number" class="form-control form-control-sm text-end d-inline-block" style="width: 90px;" @bind="RequestedQty" />
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" @bind="RequestedUom">
+                            <option value="KG">KG</option>
+                            <option value="MIL">MIL</option>
+                            <option value="PZA">PZA</option>
+                        </select>
+                    </td>
+                    <td class="text-end text-muted">$@UnitPrice.ToString("N2")</td>
+                    <td class="text-end fw-semibold">$@((RequestedQty * UnitPrice).ToString("N2"))</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="small text-muted mt-2 mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Descripción, Valor Unit. e Importe vienen de CONTPAQi (solo lectura) — la unidad de venta es configurable por producto
+            (hoy KG, como en el CFDI real de referencia; podría ser MIL o PZA para otro producto).
+        </p>
+        <button class="btn btn-link btn-sm text-decoration-none ps-0 mt-2" disabled title="Esta demo mantiene un único producto por pedido">
+            <i class="bi bi-plus-lg me-1"></i>Agregar línea
+        </button>
+    }
+    else
+    {
+        <p class="small text-muted mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Estos campos <strong>no viven en CONTPAQi</strong> (ni en el Pedido ni en el Producto — no hay campos de usuario suficientes) —
+            viven en PolyConecta, ligados al producto de CONTPAQi solo por su código. El No. de Parte del cliente
+            (<code>@CustomerPartNumber</code>) hoy se concatena a mano dentro de la Descripción libre de CONTPAQi; aquí vive como su propio campo.
+        </p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <h6 class="text-uppercase text-muted small fw-bold mb-2"><i class="bi bi-disc me-1"></i>Rollo</h6>
+                <div class="o_form_label_row"><span class="o_form_label">Tipo de Material</span><span class="o_form_value">@MaterialType</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Tipo / Medida del Rollo</span><span class="o_form_value">@RollTypeDescriptor</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Calibre</span><span class="o_form_value">@GaugeMicron micras</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Kg por Rollo</span><span class="o_form_value">@KgPerRoll kg</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Tratado</span><span class="o_form_value">@Treatment</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Pigmento</span><span class="o_form_value">@Pigment</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Aditivo</span><span class="o_form_value">@Additive</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Perforación</span><span class="o_form_value">@(HasPerforation ? "Sí (venteo termoencogible)" : "No")</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Impresión</span><span class="o_form_value">@(HasPreliminaryPrint ? "Sí" : "No")</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Kg por Fabricar (meta)</span><span class="o_form_value fw-semibold">@TargetProductionKg kg <span class="text-muted fw-normal">— de esta orden</span></span></div>
+                <div class="o_form_label_row"><span class="o_form_label">% Tolerancia (arriba)</span><span class="o_form_value fw-semibold">@TolerancePercent% <span class="text-muted fw-normal">— de esta orden</span></span></div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-uppercase text-muted small fw-bold mb-2"><i class="bi bi-scissors me-1"></i>PT <span class="text-muted fw-normal" style="text-transform: none;">(mismo rollo o segundo proceso)</span></h6>
+                <div class="o_form_label_row"><span class="o_form_label">Código Sistema</span><span class="o_form_value text-muted">PT-OWENS-TE6048-01 <span class="small">(ver arriba)</span></span></div>
+                <div class="o_form_label_row"><span class="o_form_label">No. Parte (Cliente)</span><span class="o_form_value">@CustomerPartNumber</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Medida</span><span class="o_form_value">@FinishedDimensions</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Tintas</span><span class="o_form_value">@Inks</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Pantones</span><span class="o_form_value">@Pantones</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Suaje</span><span class="o_form_value">@Suaje</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Empaque</span><span class="o_form_value">@Packaging</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Millares/Kg Solicitados</span><span class="o_form_value text-muted">@RequestedQty @RequestedUom <span class="small">(ver Líneas del Pedido)</span></span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Kg por Millar</span><span class="o_form_value fw-semibold text-success">@KgPerThousand</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">Tipo de Sello</span><span class="o_form_value">@SealingType</span></div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public decimal RequestedQty { get; set; } = 1470.0m;
+    [Parameter] public string RequestedUom { get; set; } = "KG";
+    [Parameter] public decimal UnitPrice { get; set; } = 52.50m;
+
+    // Rollo
+    [Parameter] public string MaterialType { get; set; } = "Polietileno Baja Densidad (LDPE Termoencogible)";
+    [Parameter] public string RollTypeDescriptor { get; set; } = "Tubular 610mm";
+    [Parameter] public decimal GaugeMicron { get; set; } = 60.0m;
+    [Parameter] public decimal KgPerRoll { get; set; } = 30.0m;
+    [Parameter] public string Treatment { get; set; } = "Sin tratamiento corona";
+    [Parameter] public string Pigment { get; set; } = "Natural (sin pigmentar)";
+    [Parameter] public string Additive { get; set; } = "Antibloqueo";
+    [Parameter] public bool HasPerforation { get; set; } = true;
+    [Parameter] public bool HasPreliminaryPrint { get; set; } = false;
+    [Parameter] public decimal TargetProductionKg { get; set; } = 1470.0m;
+    [Parameter] public decimal TolerancePercent { get; set; } = 2.0m;
+
+    // PT
+    [Parameter] public string CustomerPartNumber { get; set; } = "50458038";
+    [Parameter] public string FinishedDimensions { get; set; } = "60 cm x 48 cm";
+    [Parameter] public string Inks { get; set; } = "Sin impresión";
+    [Parameter] public string Pantones { get; set; } = "N/A";
+    [Parameter] public string Suaje { get; set; } = "N/A (bolsa termoencogible)";
+    [Parameter] public string Packaging { get; set; } = "Rollo continuo";
+    [Parameter] public decimal KgPerThousand { get; set; } = 0m;
+    [Parameter] public string SealingType { get; set; } = "Termosellado por calor";
+
+    private string ActiveTab = "lines";
+}

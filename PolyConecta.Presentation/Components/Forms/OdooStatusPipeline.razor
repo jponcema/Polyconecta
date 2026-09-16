@@ -1,10 +1,9 @@
-<div class="arrow-pipeline d-inline-flex align-items-center border rounded overflow-hidden" style="height: 32px; background-color: #F1F5F9;">
+<div class="o_statusbar_pipeline">
     @foreach (var stage in Stages)
     {
         var isActive = stage == CurrentStage;
         var isPast = Stages.IndexOf(stage) < Stages.IndexOf(CurrentStage);
-        <div class="arrow-step px-3 d-flex align-items-center @(isActive ? "active text-teal fw-bold" : isPast ? "done text-dark" : "text-muted")"
-             style="font-size: 0.8rem; height: 100%; cursor: pointer;">
+        <div class="arrow-step @(isActive ? "active" : isPast ? "done" : "")">
             @stage
         </div>
     }

@@ -4,11 +4,10 @@ using PolyConecta.Domain.Entities;
 namespace PolyConecta.Domain.Repositories;
 
 /// <summary>
-/// Domain Repository for Raw Material Catalog and Supplier Mappings.
+/// Domain Repository for Product Catalog (Raw Materials, Finished Goods, Scrap).
 /// </summary>
-public interface IMaterialRepository : IRepository<RawMaterialCatalog, Guid>
+public interface IMaterialRepository : IRepository<Product, Guid>
 {
-    Task<RawMaterialCatalog?> GetByInternalSkuAsync(string internalSku, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<RawMaterialCatalog>> GetActiveMaterialsAsync(CancellationToken cancellationToken = default);
-    Task<SupplierProductMapping?> GetSupplierMappingAsync(string supplierCode, string supplierSku, CancellationToken cancellationToken = default);
+    Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Product>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default);
 }

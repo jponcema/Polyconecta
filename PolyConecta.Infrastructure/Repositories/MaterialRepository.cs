@@ -14,48 +14,41 @@ public class MaterialRepository : IMaterialRepository
         _context = context;
     }
 
-    public async Task<RawMaterialCatalog?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.RawMaterialCatalogs.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
+        return await _context.Products.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<RawMaterialCatalog>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.RawMaterialCatalogs.ToListAsync(cancellationToken);
+        return await _context.Products.ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(RawMaterialCatalog entity, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Product entity, CancellationToken cancellationToken = default)
     {
-        await _context.RawMaterialCatalogs.AddAsync(entity, cancellationToken);
+        await _context.Products.AddAsync(entity, cancellationToken);
     }
 
-    public void Update(RawMaterialCatalog entity)
+    public void Update(Product entity)
     {
-        _context.RawMaterialCatalogs.Update(entity);
+        _context.Products.Update(entity);
     }
 
-    public void Delete(RawMaterialCatalog entity)
+    public void Delete(Product entity)
     {
-        _context.RawMaterialCatalogs.Remove(entity);
+        _context.Products.Remove(entity);
     }
 
-    public async Task<RawMaterialCatalog?> GetByInternalSkuAsync(string internalSku, CancellationToken cancellationToken = default)
+    public async Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
     {
-        return await _context.RawMaterialCatalogs
-            .FirstOrDefaultAsync(m => m.InternalSku == internalSku, cancellationToken);
+        return await _context.Products
+            .FirstOrDefaultAsync(m => m.Sku == sku, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<RawMaterialCatalog>> GetActiveMaterialsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Product>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default)
     {
-        return await _context.RawMaterialCatalogs
-            .Where(m => m.IsActive)
+        return await _context.Products
+            .Where(m => m.Category == category)
             .ToListAsync(cancellationToken);
-    }
-
-    public async Task<SupplierProductMapping?> GetSupplierMappingAsync(string supplierCode, string supplierSku, CancellationToken cancellationToken = default)
-    {
-        return await _context.SupplierProductMappings
-            .Include(sp => sp.RawMaterialCatalog)
-            .FirstOrDefaultAsync(sp => sp.SupplierCode == supplierCode && sp.SupplierSku == supplierSku, cancellationToken);
     }
 }

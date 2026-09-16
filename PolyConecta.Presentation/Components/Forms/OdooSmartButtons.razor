@@ -1,11 +1,11 @@
-<div class="d-flex gap-2 flex-wrap">
+<div class="d-flex gap-1 flex-wrap">
     @foreach (var btn in Buttons)
     {
-        <div class="border rounded p-2 bg-white d-flex align-items-center gap-2 cursor-pointer shadow-sm" style="cursor: pointer;" @onclick="() => OnButtonClick(btn.TargetRoute)">
-            <i class="@btn.IconClass fs-4 text-primary"></i>
-            <div>
-                <div class="fw-bold text-dark fs-6" style="line-height:1;">@btn.CountBadge</div>
-                <div class="text-muted small" style="font-size: 0.7rem; text-transform: uppercase;">@btn.Label</div>
+        <div class="o_smart_button" @onclick="() => OnButtonClick(btn.TargetRoute)">
+            <i class="@btn.IconClass"></i>
+            <div class="d-flex flex-column">
+                <span class="stat-count">@btn.CountBadge</span>
+                <span class="stat-label">@btn.Label</span>
             </div>
         </div>
     }

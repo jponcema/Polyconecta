@@ -1,147 +1,128 @@
 # ROADMAP DE ESPECIFICACIONES DE SOFTWARE (SDD) - POLYCONECTA
-## De la Fundación Técnica al MVP Funcional (Fase 1)
+## Basado en el Informe de Validación del Diagrama Operativo To-Be
 
-**Proyecto:** PolyConecta (Motor Operativo de Ruteo y Gestión de Existencias)  
+**Proyecto:** PolyConecta (Motor Operativo de Ruteo y Gestión de Existencias / MES)  
 **Empresa:** Polyempaques  
-**Alineación:** Constitución del Proyecto v1.4.0 (`.specify/memory/constitution.md`)  
+**Alineación:** Constitución del Proyecto v1.4.0 + [INFORME_VALIDACION_DIAGRAMA_OPERATIVO.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/assesment/INFORME_VALIDACION_DIAGRAMA_OPERATIVO.md)  
 **Fecha:** Septiembre 2026  
 
 ---
 
-## 🗺️ Resumen Ejecutivo del Roadmap
+## 🗺️ Resumen Ejecutivo del Nuevo Roadmap
 
-El presente documento define la hoja de ruta técnica y funcional (SDD - Software Design Document Roadmap) para construir el MVP de **PolyConecta**. El desarrollo se divide en **4 Olas Incrementales (Release Waves)** compuestas por 11 Especificaciones (`specs` `000` a `010`).
+El presente documento reestructura la hoja de ruta técnica y funcional (SDD - Software Design Document Roadmap) para construir el MVP de **PolyConecta**, tomando como fundamento exclusivo el **Informe de Validación del Diagrama Operativo To-Be** consensuado con la planta.
 
-Todas las especificaciones están estrictamente fundamentadas en los principios rectores de la **Constitución v1.4.0**:
-* **Principio VII (Respaldo en Manuales y Búsqueda Web):** Obligatoriedad de fundamentar decisiones técnicas en [Referencia_BD_CONTPAQi.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/contpaq/Referencia_BD_CONTPAQi.md) y [Referencia_SDK_CONTPAQi.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/contpaq/Referencia_SDK_CONTPAQi.md).
-* **Principio VIII (Fundamentación en la BD Operativa de Polyempaques):** Derivación directa de catálogos y transacciones contra la BD real de CONTPAQi Comercial Premium (`adm*`).
-* **Principio IX (UI/UX y Filosofía Operativa Odoo 19 Enterprise):** Obligatoriedad de diseñar todas las interfaces de usuario (UI/UX), navegación (vistas Kanban/Formulario/Lista, Smart Buttons, barras de estado de pipeline) y el modelo operativo tomando como benchmark explícito **Odoo 19 Enterprise Edition**.
+El desarrollo se organiza en **1 Spec Fundacional Baseline (`000-foundational`) + 6 Especificaciones Operativas (`001` a `006`)** estructuradas en olas según las 7 Fases Operativas validadas:
 
 ```mermaid
 flowchart TD
-    subgraph Wave1 ["OLA 1: Fundación Arquitectónica & Middleware (Semanas 1-3)"]
-        S00["SPEC-000: Solución Clean Architecture & Odoo 19 SPA"]
-        S01["SPEC-001: Integration Bridge CONTPAQi Win32"]
-        S02["SPEC-002: Modelo de Datos Core & Rutas"]
-        S00 --> S01 --> S02
+    subgraph Wave0 ["BASE FUNDACIONAL (Compactada & Implementada)"]
+        S000["SPEC-000: Foundational Baseline\n(Clean Architecture + Odoo-Native Domain + Odoo 19 SPA UI)"]
     end
 
-    subgraph Wave2 ["OLA 2: Datos Maestros, P2P & O2C (Semanas 4-6)"]
-        S03["SPEC-003: Catálogo Maestro MP & Equivalencias"]
-        S04["SPEC-004: Recepción de MP (P2P)"]
-        S05["SPEC-005: Sincronización Pedidos & Workflow 3 Firmas"]
+    subgraph Wave1 ["OLA 1: Pedido ERP & Workflow de Aprobaciones (Fases 1 & 2)"]
+        S001["SPEC-001: Captura ERP Pedidos & Workflow 2-Firmas\n(Ingesta Campos Usuario CONTPAQi, 0 Excel OT, Firmas AC/Ventas/Crédito)"]
     end
 
-    subgraph Wave3 ["OLA 3: Formulación & Piso de Planta Handheld (Semanas 7-9)"]
-        S06["SPEC-006: Planner Recetas 3 Capas"]
-        S07["SPEC-007: App Handheld Pesaje Rollos"]
-        S08["SPEC-008: Cierre OF & Balance de Masa"]
+    subgraph Wave2 ["OLA 2: Jerarquía MRP, Programación & Recetas (Fase 3)"]
+        S002["SPEC-002: Jerarquía MRP & Ingesta BoM Dinámica 3-Capas\n(Tripartita OM -> OF -> WO 'Por Programar', Receta Excel Extrusión)"]
     end
 
-    subgraph Wave4 ["OLA 4: Calidad Hard-Stop & Ruteo Multi-Planta (Semanas 10-12)"]
-        S09["SPEC-009: Calidad & Bloqueo Hard-Stop"]
-        S10["SPEC-010: Ruteo Multi-Planta & Traspasos"]
+    subgraph Wave3 ["OLA 3: Ejecución, Pesaje & Calidad en Piso (Fase 4)"]
+        S003["SPEC-003: Pesaje Iterativo, Slots & Calidad Hard-Stop\n(Vaciado Diarios, Slots Precargados, Calidad, Lote IV214-26-R00X y Reciclaje .S)"]
     end
 
-    Wave1 --> Wave2 --> Wave3 --> Wave4
+    subgraph Wave4 ["OLA 4: Balance de Masa & Cierre Técnico ERP (Fase 5)"]
+        S004["SPEC-004: Balance de Masa & Descuento Consolidado CONTPAQi\n(Masa Total Extruida, Clasificación Scrap con Motivos, Descuento al Cierre)"]
+    end
+
+    subgraph Wave5 ["OLA 5: Logística, Remisiones & Traspasos 2-Pasos (Fase 6)"]
+        S005["SPEC-005: Ruteo Logístico & Traspaso Interplanta 2-Pasos\n(Smart Buttons, Remisión Directa PIM-OUT-DIR vs Traspaso PIM -> TRANSIT -> STC)"]
+    end
+
+    subgraph Wave6 ["OLA 6: Conversión en Santa Cruz (Fase 7 - MVP Complete)"]
+        S006["SPEC-006: Módulo Conversión Bolseo / Impresión en STC\n(4 Reglas Universales, Registro Dual Millares/Kg, Factor Kg/Millar Real & Cierre)"]
+    end
+
+    Wave0 --> Wave1 --> Wave2 --> Wave3 --> Wave4 --> Wave5 --> Wave6
 ```
 
 ---
 
-## 📋 Matriz de Especificaciones (Specs) y Prompts para Spec Kit
+## 📋 Matriz de Especificaciones (Specs) del Nuevo Roadmap
 
 ---
 
-### 🧱 OLA 1: Fundación Arquitectónica e Infraestructura Integrativa
+### 🧱 BASE FUNDACIONAL (Compactada)
 
-#### SPEC-000: `000-solution-clean-architecture`
-* **Tipo:** Fundación Arquitectónica (Solución Raíz Clean Architecture & Odoo 19 Web SPA Suite)
-* **Estado:** ✅ Especificación Validada, Planificada & Implementada
-* **Objetivo:** Estructuración plana de la solución C# en la raíz con 5 capas independientes con directivas unidireccionales de dependencia: [PolyConecta.Presentation](file:///Users/emilio/Development/Sandbox/Polyconecta/PolyConecta.Presentation/README.md), [PolyConecta.Api](file:///Users/emilio/Development/Sandbox/Polyconecta/PolyConecta.Api/README.md), [PolyConecta.Domain](file:///Users/emilio/Development/Sandbox/Polyconecta/PolyConecta.Domain/README.md), [PolyConecta.Infrastructure](file:///Users/emilio/Development/Sandbox/Polyconecta/PolyConecta.Infrastructure/README.md) y [PolyConecta.Contpaq](file:///Users/emilio/Development/Sandbox/Polyconecta/PolyConecta.Contpaq/README.md). Incluye la suite UI/UX completa de Odoo 19 Enterprise (App Launcher Grid, Vistas Kanban/Lista/Formulario, Smart Buttons y Terminal Mobile Handheld).
-* **Fundamentación Técnica:** Principios I, II e IX de la Constitución v1.4.0.
-* **Ubicación Spec:** [.specify/features/000-solution-clean-architecture/spec.md](file:///Users/emilio/Development/Sandbox/Polyconecta/.specify/features/000-solution-clean-architecture/spec.md)
-
----
-
-#### SPEC-001: `001-integration-bridge-contpaqi`
-* **Tipo:** Fundación Técnica (Middleware Integration Bridge Win32)
-* **Estado:** ✅ Especificación Validada & Implementada
-* **Objetivo:** Servicio Windows (.NET 8 x86) ejecutable en Sesión 2 interactiva con cola FIFO durable en SQLite Outbox (`bridge_outbox.db`) e invocaciones nativas P/Invoke a `MGW_SDK.dll` y consultas SQL directas en modo `NOLOCK` a `adm*`.
-* **Fundamentación Técnica:** Principios I, II, VII y VIII de la Constitución v1.4.0; [Referencia_SDK_CONTPAQi.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/contpaq/Referencia_SDK_CONTPAQi.md) y [Referencia_BD_CONTPAQi.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/contpaq/Referencia_BD_CONTPAQi.md).
-* **Ubicación Spec:** [.specify/features/001-integration-bridge-contpaqi/spec.md](file:///Users/emilio/Development/Sandbox/Polyconecta/.specify/features/001-integration-bridge-contpaqi/spec.md)
+#### SPEC-000: `000-foundational`
+* **Tipo:** Fundación Técnica Baseline (Clean Architecture + Odoo-Native Domain + Odoo 19 SPA)
+* **Estado:** ✅ Especificación Validada & Base Implementada
+* **Objetivo:** Solución C# Clean Architecture de 5 capas (`PolyConecta.Domain`, `PolyConecta.Infrastructure`, `PolyConecta.Api`, `PolyConecta.Presentation`, `PolyConecta.Contpaq`), modelo de datos de dominio con 10 entidades nativas de Odoo 19 (`Product`, `StockLot`, `ManufacturingOrder`, `Bom`, `BomLine`, `StockLocation`, `StockPicking`, `StockMove`, `QualityCheck`, `StockScrap`), y suite frontend SPA Odoo 19 Enterprise (Grid App Launcher, Vistas Kanban/Lista/Formulario, Smart Buttons y Terminal Mobile Handheld).
+* **Fundamentación:** Principios I, II, VIII e IX de la Constitución v1.4.0.
+* **Ubicación Spec:** [.specify/features/000-foundational/spec.md](file:///Users/emilio/Development/Sandbox/Polyconecta/.specify/features/000-foundational/spec.md)
 
 ---
 
-#### SPEC-002: `002-core-domain-data-model`
-* **Tipo:** Fundación Arquitectónica (Domain Data Model & Order Hierarchy)
-* **Estado:** ✅ Especificación Validada & Implementada
-* **Objetivo:** Definición del modelo de datos canónico de dominio (`RolloMaestro`, `PolyLocation`, `MasterOrder`, `SubOrder`, `LotGenealogy`, `MassBalanceAudit`).
-* **Fundamentación Técnica:** Principio VIII de la Constitución v1.4.0 (`admAlmacenes`, `admProductos`, `admCapasProducto`, `admDocumentos`).
-* **Ubicación Spec:** [.specify/features/002-core-domain-data-model/spec.md](file:///Users/emilio/Development/Sandbox/Polyconecta/.specify/features/002-core-domain-data-model/spec.md)
+### 📦 OLA 1: Pedido ERP, Sincronización & Aprobaciones (Fases 1 & 2)
+
+#### SPEC-001: `001-erp-order-sync-approvals`
+* **Tipo:** Flujo Comercial & Pedidos (Fases 1 y 2 del Diagrama Operativo)
+* **Estado:** 📝 Lista para `/speckit-specify`
+* **Objetivo:** Ingesta automática vía SDK/SQL del Pedido de Venta desde CONTPAQi leyendo los **Campos de Usuario / Datos Complementarios** (eliminando al 100% los archivos Excel OT). Implementación de la máquina de estados Odoo 19:
+  $$\text{Borrador} \xrightarrow{\text{Confirmar (AC)}} \text{Confirmado} \xrightarrow{\text{Validar (Ventas/Crédito)}} \text{Autorizado}$$
+  Botones individuales de **"Validar"** para Ventas y Crédito/Cobranza.
+* **Fundamentación Operativa:** Puntos 1, 3, 5, 6 y 7 de la Matriz de Discrepancias Validada.
 
 ---
 
-### 📦 OLA 2: Datos Maestros, Recepciones (P2P) y Aprobaciones (O2C)
+### 🏭 OLA 2: Jerarquía MRP, Programación & Recetas (Fase 3)
 
-#### SPEC-003: `003-solution-layer-interfaces`
-* **Tipo:** Especificación Intermedia (Interfaces Reales & Contratos de Solución)
-* **Estado:** 📝 Especificación Creada (Lista para `/speckit-plan`)
-* **Objetivo:** Definición formal de todas las interfaces fuertemente tipadas y contratos de integración entre capas: Repositorios de Dominio (`IRepository`, `IOrderRepository`), Unidades de Trabajo (`IUnitOfWork`), Publicador de Eventos de Dominio (`IDomainEventPublisher`), Envolvente API REST (`ApiResponse<T>`), SDK JavaScript Frontend (`PolyAPI.client`) y Gateway CONTPAQi (`IContpaqSdkGateway`).
-* **Fundamentación Técnica:** Principios I, II, VII, VIII e IX de la Constitución v1.4.0.
-* **Ubicación Spec:** [.specify/features/003-solution-layer-interfaces/spec.md](file:///Users/emilio/Development/Sandbox/Polyconecta/.specify/features/003-solution-layer-interfaces/spec.md)
-
----
-
-#### SPEC-004: `004-p2p-goods-receipt`
-* **Tipo:** Flujo Operativo (Recepción de Compras & Calidad 1)
-* **Objetivo:** Registro de Recepción Física de MP en Planta PIM (`PIM/Stock/MP`), inspección de recibo, asignación de Lote de Recepción (`MP-PROV-YYYYMMDD-LOT`) y llamada SDK para generar la "Entrada de Compra" en CONTPAQi afectando `admCapasProducto`.
-* **Fundamentación Técnica:** Principios VII y VIII de la Constitución v1.4.0.
+#### SPEC-002: `002-mrp-hierarchy-bom-planner`
+* **Tipo:** Planeación MRP & Formulación (Fase 3 del Diagrama Operativo)
+* **Estado:** 📝 Pendiente
+* **Objetivo:** Jerarquía tripartita: `OM` (Maestra) $\rightarrow$ `OF` (Proceso: `OF-EXT`, `OF-IMP`, `OF-BOL`) $\rightarrow$ `WO` (Orden de Trabajo en centro predeterminado `'Por programar'`). Ingesta obligatoria del Excel de BoM de extrusión al confirmar `OF-EXT`, cálculo de resinas/aditivos por capa (Tolvas A, B, C) y reserva de MP en `PIM/Stock/MP`. Conmutación a `En progreso` al asignar máquina física y fecha programada.
+* **Fundamentación Operativa:** Puntos 4, 8, 9 y 10 de la Matriz de Discrepancias Validada.
 
 ---
 
-#### SPEC-005: `005-o2c-order-sync-approvals`
-* **Tipo:** Flujo Comercial (Order-to-Cash & Workflow)
-* **Objetivo:** Sincronización de Pedidos de Venta desde CONTPAQi $\rightarrow$ Creación de Orden Maestra (OM) $\rightarrow$ Workflow de Aprobaciones Secuenciales Digitales con los 3 roles autorizadores obligatorios y UI/UX estilo Odoo 19.
-* **Fundamentación Técnica:** Principios III, V, VIII e IX de la Constitución v1.4.0.
+### ⚖️ OLA 3: Piso de Planta, Pesaje Iterativo, Slots & Calidad (Fase 4)
+
+#### SPEC-003: `003-shopfloor-weighing-quality-slots`
+* **Tipo:** Piso de Planta, Pesaje & Calidad (Fase 4 del Diagrama Operativo)
+* **Estado:** 📝 Pendiente
+* **Objetivo:** Vaciado digital de diarios de piso leídos a pie de máquina. Precarga anticipada de slots (`Rollo 1`... `Rollo N`) y Fichas de Inspección (`quality.check`). Nomenclatura de lotes `[Folio_Pedido]-R[Secuencial_3_Dígitos]` (ej. `IV214-26-R001`). **Regla de Cuarentena `.S`**: si un rollo es rechazado, se renombra a `IV214-26-R001.S` y pasa a `PIM/Stock/Cuarentena`, **liberando el slot `R001`** para el rollo de reposición.
+* **Fundamentación Operativa:** Puntos 11 y 14 de la Matriz de Discrepancias Validada.
 
 ---
 
-### 🏭 OLA 3: Formulación y Piso de Planta Handheld (Corazón MES)
+### 📊 OLA 4: Balance de Masa & Cierre Técnico ERP (Fase 5)
 
-#### SPEC-006: `006-bom-extrusion-planner`
-* **Tipo:** Planeación de Producción (MES Extrusión)
-* **Objetivo:** Consola para el Planner de Extrusión: importación de Recetas Dinámicas de Co-Extrusión de 3 capas (Tolvas A/B/C: % resina virgen, aditivos, pigmentos), programación de extrusoras y generación de folios inmutables (`EX-01-260910-042747`).
-* **Fundamentación Técnica:** Principios I, VI, VIII e IX de la Constitución v1.4.0.
-
----
-
-#### SPEC-007: `007-handheld-roll-weighing`
-* **Tipo:** Ejecución en Piso de Planta (UX Handheld Mobile)
-* **Objetivo:** Aplicación Móvil Handheld para Planners/Supervisores en planta PIM: pesaje iterativo de rollos extruidos a pie de máquina, captura de peso neto, tara de cono, metraje, calibre e impresión/lectura de etiquetas QR GS1-128.
-* **Fundamentación Técnica:** Principios VI e IX de la Constitución v1.4.0 (UX Odoo Barcode).
+#### SPEC-004: `004-mass-balance-erp-closure`
+* **Tipo:** Balance de Masa & Cierre ERP (Fase 5 del Diagrama Operativo)
+* **Estado:** 📝 Pendiente
+* **Objetivo:** Cálculo de Masa Total Extruida ($\sum \text{Rollos Buenos+Cuarentena} + \sum \text{Scrap}$). Registro de scrap por SKU resina/color con Reason Codes. **Ejecución de un único descuento masivo consolidado de materias primas en CONTPAQi Premium al Confirmar y realizar el Cierre Técnico de la `OF-EXT`**.
+* **Fundamentación Operativa:** Puntos 12 y 13 de la Matriz de Discrepancias Validada.
 
 ---
 
-#### SPEC-008: `008-mass-balance-closure`
-* **Tipo:** Algoritmo MES e Integración ERP (Cierre de OF)
-* **Objetivo:** Cierre Técnico de OF de Extrusión: cálculo de Balance de Masa ($\text{Consumo MP} = \sum \text{Rollos Netos} + \text{Scrap Declara}$), evaluación contra la tolerancia configurable (2.0%) y posteo SDK de Salidas por Consumo de MP y Entradas de PT en CONTPAQi.
-* **Fundamentación Técnica:** Principios IV, VII, VIII e IX de la Constitución v1.4.0.
+### 🚚 OLA 5: Logística, Remisiones & Traspasos Interplanta 2-Pasos (Fase 6)
+
+#### SPEC-005: `005-logistics-routing-2step-transfers`
+* **Tipo:** Motor Logístico & Ruteo (Fase 6 del Diagrama Operativo)
+* **Estado:** 📝 Pendiente
+* **Objetivo:** Smart Buttons UI ("Entregas / Envíos" para Cliente Directo vs "Operaciones de Traslado" para Interplanta). Despacho Directo (`PIM-OUT-DIR`) genera Remisión de Venta en CONTPAQi. Traspaso Interplanta 2 Pasos: Paso 1 `PIM-TR-OUT` a ubicación virtual `TRANSIT/PIM-STC` (sin afectación contable); Paso 2 `STC-TR-IN` recepción validada en Santa Cruz dispara el documento de Traspaso de Almacén en CONTPAQi Premium.
+* **Fundamentación Operativa:** Punto 15 de la Matriz de Discrepancias Validada.
 
 ---
 
-### 🔒 OLA 4: Calidad Hard-Stop & Ruteo Multi-Planta (MVP Complete)
+### ✂️ OLA 6: Conversión en Santa Cruz (Bolseo / Impresión) (Fase 7 - MVP Complete)
 
-#### SPEC-009: `009-quality-inspection-hardstop`
-* **Tipo:** Control de Calidad & Aislamiento (Quality Gate)
-* **Objetivo:** Fichas de inspección de calidad en proceso y auditoría obligatoria. Módulo de Cuarentena (Etiquetado Rojo) y **Hard-Stop sistémico** que bloquea automáticamente traspasos o remisiones de lotes no liberados.
-* **Fundamentación Técnica:** Principios IV e IX de la Constitución v1.4.0.
-
----
-
-#### SPEC-010: `010-multi-plant-routing-handheld`
-* **Tipo:** Logística y Ruteo Multi-Planta (Routing Engine)
-* **Objetivo:** Motor de ruteo para traspasos entre Planta PIM (Apodaca) y Planta Santa Cruz (Guadalupe) en 2 pasos (`PIM-TR-OUT` $\rightarrow$ `TRANS/PIM-SC` $\rightarrow$ `STC-TR-IN`) mediante escaneo Handheld. Incluye la regla para la ruta Montemorelos (Razón Social 2).
-* **Fundamentación Técnica:** Principios V, VII, VIII e IX de la Constitución v1.4.0.
+#### SPEC-006: `006-conversion-bagging-printing-stc`
+* **Tipo:** Conversión & Proceso Secundario (Fase 7 del Diagrama Operativo)
+* **Estado:** 📝 Pendiente
+* **Objetivo:** Aplicación de las 4 Reglas Universales de Manufactura a `OF-BOL` y `OF-IMP`. Registro Dual en Bolseo: **Millares Producidos** (comercial) + **Peso Neto Total (kg)** (báscula) + **Factor de Conversión Real** ($\text{Kg/Millar real} = \frac{\text{Kg pesados}}{\text{Millares}}$), contrastado contra ficha técnica. Cierre técnico de `OF-BOL` y marcación del Pedido como `Hecho`.
+* **Fundamentación Operativa:** Puntos 16 y 17 de la Matriz de Discrepancias Validada.
 
 ---
 

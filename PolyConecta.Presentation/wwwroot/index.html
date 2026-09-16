@@ -3,23 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PolyConecta - Sistema de Manufactura</title>
+    <title>PolyConecta — Sistema de Manufactura Enterprise (Odoo Style)</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 & Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --odoo-purple: #714B67;
-            --odoo-bg: #F8FAFC;
-            --sidebar-bg: #FFFFFF;
-            --border-color: #E2E8F0;
-            --text-main: #1E293B;
-            --text-muted: #64748B;
+            --brand-primary: #714B67;
+            --brand-primary-hover: #5D3D55;
+            --brand-secondary: #017E84;
+            --brand-light: #F4EFF3;
+            --app-bg: #F3F4F6;
+            --border-color: #E5E7EB;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --topbar-bg: #714B67;
+            --control-bg: #FFFFFF;
+            --sheet-bg: #FFFFFF;
         }
 
         body {
-            background-color: var(--odoo-bg);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--app-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: var(--text-main);
             margin: 0;
             padding: 0;
@@ -29,11 +38,11 @@
             overflow: hidden;
         }
 
-        /* 1. TOPBAR (Basado en mockup-001: Logo a la izquierda, spotlight search y Avatar A a la derecha) */
-        .app-topbar {
-            background-color: white;
-            border-bottom: 1px solid var(--border-color);
-            height: 48px;
+        /* Top Navbar Odoo Enterprise Style (#714B67) */
+        .o_main_navbar {
+            background-color: var(--topbar-bg);
+            color: white;
+            height: 46px;
             padding: 0 1rem;
             display: flex;
             align-items: center;
@@ -42,857 +51,1025 @@
             flex-shrink: 0;
         }
 
-        .brand-box {
-            border: 1px solid #CBD5E1;
-            border-radius: 0.375rem;
-            padding: 0.2rem 0.85rem;
+        .o_main_navbar .app-brand {
             font-weight: 700;
-            color: var(--text-main);
-            font-size: 0.9rem;
-            cursor: pointer;
+            font-size: 1.05rem;
+            color: white;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .spotlight-search-box {
-            position: relative;
-            width: 260px;
-        }
-
-        .spotlight-search-box input {
-            width: 100%;
-            border-radius: 20px;
-            padding: 0.25rem 0.75rem 0.25rem 2rem;
-            border: 1px solid #CBD5E1;
-            font-size: 0.8rem;
-            background: #F8FAFC;
-            outline: none;
-        }
-
-        .spotlight-search-box i {
-            position: absolute;
-            left: 0.65rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94A3B8;
-            font-size: 0.8rem;
-        }
-
-        .user-avatar-circle {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 1px solid #94A3B8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: #334155;
-            background: white;
-            cursor: pointer;
-        }
-
-        /* 2. LAYOUT BODY CONTAINER */
-        .app-body {
-            display: flex;
-            flex-grow: 1;
-            height: calc(100vh - 48px);
-            overflow: hidden;
-        }
-
-        /* SIDEBAR IZQUIERDO COLAPSABLE */
-        .app-sidebar {
-            width: 200px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            transition: width 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .app-sidebar.collapsed {
-            width: 50px;
-        }
-
-        .sidebar-header {
-            height: 40px;
-            padding: 0 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .sidebar-toggle-btn {
-            background: #F1F5F9;
-            border: 1px solid var(--border-color);
-            border-radius: 0.25rem;
-            color: var(--text-muted);
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .sidebar-nav {
-            padding: 0.5rem 0.4rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-        }
-
-        .sidebar-link {
             display: flex;
             align-items: center;
             gap: 0.6rem;
-            padding: 0.45rem 0.6rem;
-            border-radius: 0.25rem;
-            color: var(--text-main);
+        }
+
+        .o_main_navbar .nav-item-link {
+            color: rgba(255,255,255,0.85);
             text-decoration: none;
             font-size: 0.85rem;
             font-weight: 500;
-            transition: background 0.15s ease;
+            padding: 0.4rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: all 0.15s ease;
         }
 
-        .sidebar-link:hover, .sidebar-link.active {
-            background-color: #F1F5F9;
-            color: var(--odoo-purple);
-            font-weight: 700;
+        .o_main_navbar .nav-item-link:hover,
+        .o_main_navbar .nav-item-link.active {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+            font-weight: 600;
         }
 
-        .app-sidebar.collapsed .sidebar-text {
-            display: none;
-        }
-
-        .sidebar-divider {
-            height: 1px;
-            background-color: var(--border-color);
-            margin: 0.4rem 0.5rem;
-        }
-
-        /* WORKSPACE AREA */
-        .workspace-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            background-color: var(--odoo-bg);
-            padding: 1.25rem;
-        }
-
-        /* LIST VIEW HEADER BAR (Pedidos / Manufactura) */
-        .list-view-header-bar {
+        /* Control Panel Header (Breadcrumbs + Action Buttons + Filters + View Switcher) */
+        .o_control_panel {
+            background-color: var(--control-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.6rem 1.25rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.75rem;
+            flex-shrink: 0;
+            min-height: 54px;
         }
 
-        .search-bar-middle {
-            width: 320px;
-            position: relative;
-        }
-
-        .search-bar-middle input {
-            width: 100%;
-            border-radius: 0.375rem;
-            border: 1px solid #CBD5E1;
-            padding: 0.25rem 0.75rem;
-            font-size: 0.85rem;
-        }
-
-        /* TOP ACTION BAR ABOVE SHEET (Acciones a la izquierda, Smart Buttons EN EL CENTRO/MEDIO) */
-        .top-action-bar {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
+        .o_breadcrumb {
+            display: flex;
             align-items: center;
-            margin-bottom: 0.85rem;
             gap: 0.5rem;
+            font-size: 0.95rem;
         }
 
-        /* SMART BUTTONS CONTAINER (Ubicados en el medio/centro exactamente como en mockup-001) */
-        .smart-buttons-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            grid-column: 2;
-        }
-
-        .smart-buttons-box {
-            display: flex;
-            gap: 0.35rem;
-            border: 1px solid #CBD5E1;
-            border-radius: 0.375rem;
-            padding: 0.2rem 0.5rem;
-            background: white;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-
-        .smart-btn-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.725rem;
+        .o_breadcrumb .parent-item {
+            color: var(--brand-primary);
             font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .o_breadcrumb .current-item {
             color: var(--text-main);
-            padding: 0.15rem 0.65rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            line-height: 1.1;
-            transition: all 0.15s ease;
-            user-select: none;
-        }
-
-        .smart-btn-item:hover {
-            background-color: #F1F5F9;
-            color: var(--odoo-purple);
-        }
-
-        .smart-buttons-label {
-            font-size: 0.6rem;
             font-weight: 700;
+        }
+
+        .o_view_switcher .btn-view {
+            border: 1px solid var(--border-color);
+            background: white;
             color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.85rem;
+            border-radius: 0.25rem;
+            transition: all 0.15s ease;
         }
 
-        /* FORM SHEET CARD & CHATTER LAYOUT */
-        .form-with-chatter-layout {
+        .o_view_switcher .btn-view.active,
+        .o_view_switcher .btn-view:hover {
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background-color: var(--brand-light);
+        }
+
+        /* Main Workspace & Form Sheet Frame */
+        .o_content_body {
+            flex-grow: 1;
             display: flex;
-            gap: 1.25rem;
+            overflow: hidden;
+            background-color: var(--app-bg);
+        }
+
+        .o_form_view_container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .o_form_sheet {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
             width: 100%;
-            align-items: flex-start;
-        }
-
-        .form-sheet-card {
-            flex: 1 1 70%;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            padding: 1.25rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-            min-width: 0;
-        }
-
-        .chatter-panel-card {
-            flex: 0 0 280px;
-            width: 280px;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
+            max-width: 1100px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-            min-height: 480px;
+            margin-bottom: 2rem;
+            overflow: hidden;
         }
 
-        /* STATUS PIPELINE / ETAPAS (DENTRO DEL FORM SHEET EN LA ESQUINA SUPERIOR DERECHA) */
-        .sheet-pipeline-bar {
+        /* Form Statusbar (Actions on Left, Chevron Arrow Pipeline on Right) */
+        .o_statusbar {
+            background-color: #F9FAFB;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.6rem 1.25rem;
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #94A3B8;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
-        .sheet-pipeline-step {
-            color: #94A3B8;
+        .o_statusbar_status {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            background: white;
+            height: 34px;
         }
 
-        .sheet-pipeline-step.active {
-            color: var(--odoo-purple);
+        .o_status_btn {
+            padding: 0 0.85rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: #6B7280;
+            border-right: 1px solid var(--border-color);
+            white-space: nowrap;
+            background: white;
+        }
+
+        .o_status_btn:last-child {
+            border-right: none;
+        }
+
+        .o_status_btn.active {
+            background-color: var(--brand-primary);
+            color: white;
             font-weight: 700;
         }
 
-        /* NOTEBOOK TABS */
-        .notebook-nav-tabs {
-            border-bottom: 1px solid #E2E8F0;
-            margin-top: 1.25rem;
+        .o_status_btn.done {
+            color: var(--brand-primary);
+            background-color: #F3F4F6;
+        }
+
+        /* Smart Buttons Box (Top Right inside Sheet) */
+        .o_button_box {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            padding: 1rem 1.5rem 0.5rem 1.5rem;
+            border-bottom: 1px solid #F3F4F6;
+            flex-wrap: wrap;
+        }
+
+        .o_smart_button {
+            border: 1px solid #D1D5DB;
+            background: white;
+            border-radius: 4px;
+            width: 140px;
+            height: 46px;
+            padding: 0.35rem 0.65rem;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.15s ease;
+        }
+
+        .o_smart_button:hover {
+            border-color: var(--brand-primary);
+            background-color: var(--brand-light);
+            color: var(--brand-primary);
+        }
+
+        .o_smart_button .stat-count {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--brand-primary);
+            line-height: 1;
+        }
+
+        .o_smart_button .stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #4B5563;
+            line-height: 1.1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .o_sheet_body {
+            padding: 1.5rem;
+        }
+
+        /* Chatter Panel (Right Side on Desktop) */
+        .o_chatter {
+            width: 360px;
+            background: #FAFAFA;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .o_chatter_topbar {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: white;
             display: flex;
             gap: 0.5rem;
         }
 
-        .notebook-nav-tabs .nav-link {
-            border: none;
-            color: #64748B;
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 0.4rem 0.75rem;
-            background: transparent;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-        }
-
-        .notebook-nav-tabs .nav-link.active {
-            color: var(--odoo-purple);
-            border-bottom-color: var(--odoo-purple);
-            background: transparent;
-        }
-
-        .notebook-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.825rem;
-            margin-top: 0.75rem;
-        }
-
-        .notebook-table th {
-            font-weight: 600;
-            color: #475569;
-            border-bottom: 1px solid #E2E8F0;
-            padding: 0.45rem 0.55rem;
-            text-align: left;
-            background: #F8FAFC;
-        }
-
-        .notebook-table td {
-            padding: 0.5rem 0.55rem;
-            border-bottom: 1px solid #F1F5F9;
-            color: #1E293B;
-        }
-
-        /* CHATTER DRAWER DETAILS */
-        .chatter-top-input {
-            padding: 0.65rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .chatter-feed-body {
-            padding: 0.75rem;
+        .o_chatter_body {
+            padding: 1rem;
             flex-grow: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            gap: 0.75rem;
         }
 
-        .chatter-watermark {
-            text-align: center;
-            color: #CBD5E1;
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin-top: auto;
-            margin-bottom: 1.5rem;
+        .o_chatter_msg {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.8rem;
+        }
+
+        .o_chatter_msg.internal-note {
+            background: #FEFCE8;
+            border-color: #FEF08A;
+        }
+
+        /* Buttons & Badges */
+        .btn-brand-primary {
+            background-color: var(--brand-primary);
+            color: white;
+            font-weight: 600;
+        }
+        .btn-brand-primary:hover {
+            background-color: var(--brand-primary-hover);
+            color: white;
+        }
+
+        .badge-brand {
+            background-color: var(--brand-light);
+            color: var(--brand-primary);
+            border: 1px solid var(--brand-primary);
+        }
+
+        /* Datatable & Kanban cards */
+        .kanban-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .kanban-card:hover {
+            border-color: var(--brand-primary);
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. TOPBAR (Fiel a mockup-001: logo a la izquierda, spotlight search y avatar A a la derecha) -->
-    <header class="app-topbar">
-        <div>
-            <a href="#" class="brand-box" onclick="navigateTo('dashboard')">
-                <i class="bi bi-grid-3x3-gap-fill text-warning"></i>
-                <span>PolyConecta</span>
+    <!-- TOP NAVBAR (Odoo Enterprise #714B67) -->
+    <header class="o_main_navbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="#" class="app-brand" onclick="showModule('pedidos')">
+                <i class="bi bi-grid-3x3-gap-fill fs-5 text-warning"></i>
+                <span>PolyConecta MES</span>
             </a>
+            <div class="d-none d-md-flex align-items-center gap-1 ms-2">
+                <a href="#" class="nav-item-link active" id="menu-pedidos" onclick="showModule('pedidos')">Pedidos & Ventas</a>
+                <a href="#" class="nav-item-link" id="menu-om" onclick="showModule('om')">Manufactura (OM)</a>
+                <a href="#" class="nav-item-link" id="menu-of" onclick="showModule('of')">Fabricación (OF)</a>
+                <a href="#" class="nav-item-link" id="menu-wo" onclick="showModule('wo')">Órdenes Trabajo (WO)</a>
+                <a href="#" class="nav-item-link" id="menu-recursos" onclick="showModule('centros')">Piso & Recursos</a>
+                <a href="#" class="nav-item-link" id="menu-calidad" onclick="showModule('calidad')">Calidad & Báscula</a>
+                <a href="#" class="nav-item-link" id="menu-logistica" onclick="showModule('logistica')">Logística & Traspasos</a>
+            </div>
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            <div class="spotlight-search-box">
-                <input type="text" id="spotlightInput" placeholder="spotlight search" oninput="handleSpotlightSearch(this.value)">
-                <i class="bi bi-search"></i>
+            <div class="spotlight-search-box d-none d-lg-block" style="position:relative; width:220px;">
+                <input type="text" class="form-control form-control-sm rounded-pill ps-4" placeholder="Buscar registros..." oninput="handleSearch(this.value)">
+                <i class="bi bi-search position-absolute" style="left:10px; top:50%; transform:translateY(-50%); color:#9CA3AF; font-size:0.8rem;"></i>
             </div>
-
-            <div class="user-avatar-circle" title="Alejandro Porras">
+            <span class="badge bg-white text-dark font-monospace px-2 py-1 small">Planta Apodaca / SC</span>
+            <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center fw-bold" style="width:28px; height:28px; font-size:0.8rem;" title="Alejandro Porras">
                 A
             </div>
         </div>
     </header>
 
-    <!-- 2. LAYOUT MAIN CONTAINER WITH SIDEBAR & WORKSPACE -->
-    <div class="app-body">
-        
-        <!-- SIDEBAR IZQUIERDO COLAPSABLE -->
-        <aside class="app-sidebar" id="appSidebar">
-            <div class="sidebar-header">
-                <button class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Contraer/Expandir menú">
-                    <i class="bi bi-arrow-left-short fs-5" id="sidebarToggleIcon"></i>
-                </button>
+    <!-- CONTROL PANEL HEADER -->
+    <div class="o_control_panel">
+        <div class="d-flex align-items-center gap-3">
+            <div class="o_breadcrumb" id="breadcrumbContainer">
+                <span class="parent-item" onclick="showModule('pedidos')">Pedidos CONTPAQi</span>
+                <i class="bi bi-chevron-right text-muted opacity-50 small"></i>
+                <span class="current-item" id="currentBreadcrumbDoc">PED-2026-3192389</span>
             </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="sidebar-link active" id="nav-dashboard" onclick="navigateTo('dashboard')">
-                    <i class="bi bi-speedometer2"></i>
-                    <span class="sidebar-text">Inicio</span>
-                </a>
-                <a href="#" class="sidebar-link" id="nav-pedidos" onclick="navigateTo('pedidos-list')">
-                    <i class="bi bi-cart-check-fill"></i>
-                    <span class="sidebar-text">Pedidos</span>
-                </a>
-                <a href="#" class="sidebar-link" id="nav-manufactura" onclick="navigateTo('manufactura-list')">
-                    <i class="bi bi-gear-wide-connected"></i>
-                    <span class="sidebar-text">Manufactura</span>
-                </a>
-                <a href="#" class="sidebar-link" id="nav-calidad" onclick="navigateTo('calidad')">
-                    <i class="bi bi-shield-check"></i>
-                    <span class="sidebar-text">Calidad</span>
-                </a>
-                
-                <div class="sidebar-divider"></div>
-                
-                <a href="#" class="sidebar-link" id="nav-config" onclick="navigateTo('configuracion')">
-                    <i class="bi bi-sliders"></i>
-                    <span class="sidebar-text">Configuracion</span>
-                </a>
-            </nav>
-        </aside>
+        </div>
 
-        <!-- WORKSPACE CONTENT AREA -->
-        <main class="workspace-content" id="mainWorkspace">
-
-            <!-- SCREEN 1: INICIO / DASHBOARD (Basado en mockup-001) -->
-            <div id="screen-dashboard">
-                <h4 class="fw-bold text-dark mb-3">Dashboard de produccion</h4>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="card border p-3 bg-white cursor-pointer" onclick="navigateTo('pedidos-list')" style="cursor:pointer;">
-                            <h6 class="fw-bold mb-1"><i class="bi bi-cart-check text-primary me-2"></i>Pedidos (Contpaq)</h6>
-                            <p class="text-muted small m-0">Ver listado de pedidos de venta</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card border p-3 bg-white cursor-pointer" onclick="navigateTo('manufactura-list')" style="cursor:pointer;">
-                            <h6 class="fw-bold mb-1"><i class="bi bi-gear-wide-connected text-success me-2"></i>Órdenes de Manufactura</h6>
-                            <p class="text-muted small m-0">Ver listado de órdenes de fabricación</p>
-                        </div>
-                    </div>
-                </div>
+        <!-- View Switchers (List, Kanban, Form) -->
+        <div class="d-flex align-items-center gap-2">
+            <div class="btn-group o_view_switcher" role="group">
+                <button class="btn btn-view active" id="btn-view-form" onclick="switchViewMode('form')" title="Vista Formulario"><i class="bi bi-file-text-fill"></i> Formulario</button>
+                <button class="btn btn-view" id="btn-view-list" onclick="switchViewMode('list')" title="Vista Lista"><i class="bi bi-list-ul"></i> Lista</button>
+                <button class="btn btn-view" id="btn-view-kanban" onclick="switchViewMode('kanban')" title="Vista Kanban"><i class="bi bi-kanban-fill"></i> Kanban</button>
             </div>
-
-            <!-- SCREEN 2: LISTADO DE PEDIDOS CONTPAQ (Basado en mockup-001) -->
-            <div id="screen-pedidos-list" style="display: none;">
-                <div class="list-view-header-bar">
-                    <h5 class="fw-bold text-dark m-0">Pedidos (Contpaq)</h5>
-                    
-                    <div class="search-bar-middle">
-                        <input type="text" placeholder="search">
-                    </div>
-
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary">kanban</button>
-                        <button class="btn btn-secondary active fw-bold">list</button>
-                    </div>
-                </div>
-
-                <div class="card border rounded overflow-hidden bg-white">
-                    <table class="table table-hover align-middle m-0">
-                        <thead class="table-light font-monospace small">
-                            <tr>
-                                <th>Folio Pedido</th>
-                                <th>Cliente</th>
-                                <th>Fecha</th>
-                                <th>Fecha Est. Entrega</th>
-                                <th>Ubicación</th>
-                                <th>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody class="small font-monospace">
-                            <tr onclick="navigateTo('pedido-form')" style="cursor: pointer;">
-                                <td class="fw-bold text-primary">3192389</td>
-                                <td class="fw-semibold text-dark">Vidrios de Mexico SA de CV</td>
-                                <td>23 abril 2026</td>
-                                <td>05 mayo 2026</td>
-                                <td class="text-muted">Planta Gracia, Carr. Mty Garcia Km s/n</td>
-                                <td class="fw-bold">$25,000.00</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SCREEN 3: FORMULARIO PEDIDO (Basado exactamente en mockup-001) -->
-            <div id="screen-pedido-form" style="display: none;">
-                <!-- Top Action Bar above sheet: Action buttons left (Col 1), Smart Buttons CENTERED (Col 2) -->
-                <div class="top-action-bar">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-dark fw-bold px-3">Confirmar</button>
-                    </div>
-
-                    <!-- Smart Buttons Box (EN EL CENTRO / MEDIO según mockup-001) -->
-                    <div class="smart-buttons-wrapper">
-                        <div class="smart-buttons-box">
-                            <div class="smart-btn-item" onclick="alert('Mostrando resumen de entrega de Pedido 3192389')">
-                                <span>Entrega</span>
-                                <span class="fw-bold">1</span>
-                            </div>
-                            <div class="smart-btn-item" onclick="navigateTo('manufactura-form')" title="Navegar a Orden de Manufactura vinculada (IV214-26)">
-                                <span>Manufacturas</span>
-                                <span class="fw-bold">1</span>
-                            </div>
-                        </div>
-                        <span class="smart-buttons-label">SMART BUTTONS</span>
-                    </div>
-
-                    <div></div>
-                </div>
-
-                <div class="form-with-chatter-layout">
-                    <!-- Left Form Sheet Card -->
-                    <div class="form-sheet-card">
-                        <!-- Top Row inside sheet: Document Header info (Left) & Status Pipeline Etapas (Right) -->
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <div class="small text-muted fw-bold">Pedido</div>
-                                <h2 class="fw-bold font-monospace text-dark m-0">3192389</h2>
-                            </div>
-
-                            <!-- Status Pipeline Etapas en la esquina superior derecha dentro del card (Fiel a mockup-001) -->
-                            <div class="sheet-pipeline-bar">
-                                <span class="sheet-pipeline-step">Pedido Sincronizado</span>
-                                <span>/</span>
-                                <span class="sheet-pipeline-step">Confirmado</span>
-                                <span>/</span>
-                                <span class="sheet-pipeline-step active">En manufactura</span>
-                                <span>/</span>
-                                <span class="sheet-pipeline-step">Hecho</span>
-                            </div>
-                        </div>
-
-                        <!-- Info Grid -->
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-7">
-                                <div class="mb-1">
-                                    <span class="small text-muted me-2">Cliente:</span>
-                                    <span class="fw-bold fs-6 text-dark">Vidrios de Mexico SA de CV</span>
-                                </div>
-                                <div>
-                                    <span class="small text-muted d-block">Ubicacion:</span>
-                                    <span class="small font-semibold text-dark">Planta Gracia, Carr. Mty Garcia Km s/n, Garcia N.L. C.P. 66000</span>
-                                </div>
-                            </div>
-
-                            <div class="col-md-5 text-md-end">
-                                <div class="mb-1">
-                                    <span class="small text-muted">Fecha: </span>
-                                    <span class="fw-semibold text-dark">23 abril 2026</span>
-                                </div>
-                                <div>
-                                    <span class="small text-muted">Fecha est. Entrega: </span>
-                                    <span class="fw-semibold text-dark">05 mayo 2026</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Notebook Tabs -->
-                        <div class="notebook-nav-tabs">
-                            <button class="nav-link active">Detalle</button>
-                            <button class="nav-link">Observaciones</button>
-                        </div>
-
-                        <table class="notebook-table">
-                            <thead>
-                                <tr>
-                                    <th>Codigo</th>
-                                    <th>Ruta</th>
-                                    <th>No. Parte.</th>
-                                    <th>Descripcion</th>
-                                    <th class="text-end">Cantidad</th>
-                                    <th class="text-end">Precio</th>
-                                    <th class="text-end">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody class="font-monospace">
-                                <tr>
-                                    <td class="fw-bold text-primary">51380V205</td>
-                                    <td>PIM</td>
-                                    <td>4010004547</td>
-                                    <td>Rollo tubular 20.5 x370...</td>
-                                    <td class="text-end fw-semibold">500</td>
-                                    <td class="text-end">51</td>
-                                    <td class="text-end fw-bold">25000</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Right Side Chatter Drawer Card (Basado en mockup-001) -->
-                    <div class="chatter-panel-card">
-                        <div class="chatter-top-input">
-                            <div class="input-group input-group-sm">
-                                <input type="text" id="pedidoChatterInput" class="form-control" placeholder="Escribir nota..." onkeydown="if(event.key==='Enter') sendChatterNote('pedidoChatterInput', 'pedidoChatterFeed')">
-                                <button class="btn btn-primary btn-sm fw-semibold" onclick="sendChatterNote('pedidoChatterInput', 'pedidoChatterFeed')">Send</button>
-                            </div>
-                        </div>
-
-                        <div class="chatter-feed-body" id="pedidoChatterFeed">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.725rem;">
-                                    <span class="fw-bold text-dark">Alejandro Porras</span>
-                                    <span>12:30 pm</span>
-                                </div>
-                                <div class="small text-muted">Se carga el pedido de venta polyconecta</div>
-                            </div>
-
-                            <div class="chatter-watermark">
-                                CHATTER
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SCREEN 4: LISTADO DE MANUFACTURAS (Basado en mockup-001) -->
-            <div id="screen-manufactura-list" style="display: none;">
-                <div class="list-view-header-bar">
-                    <h5 class="fw-bold text-dark m-0">Ordenes de Manufactura</h5>
-                    
-                    <div class="search-bar-middle">
-                        <input type="text" placeholder="search">
-                    </div>
-
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary">kanban</button>
-                        <button class="btn btn-secondary active fw-bold">list</button>
-                    </div>
-                </div>
-
-                <div class="card border rounded overflow-hidden bg-white">
-                    <table class="table table-hover align-middle m-0">
-                        <thead class="table-light font-monospace small">
-                            <tr>
-                                <th>Orden Manufactura</th>
-                                <th>Cliente</th>
-                                <th>Fecha</th>
-                                <th>Fecha Est. Entrega</th>
-                                <th>Ubicación</th>
-                                <th>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody class="small font-monospace">
-                            <tr onclick="navigateTo('manufactura-form')" style="cursor: pointer;">
-                                <td class="fw-bold text-primary">IV214-26</td>
-                                <td class="fw-semibold text-dark">Vidrios de Mexico SA de CV</td>
-                                <td>23 abril 2026</td>
-                                <td>05 mayo 2026</td>
-                                <td class="text-muted">Planta Gracia, Carr. Mty Garcia Km s/n</td>
-                                <td class="fw-bold">$25,000.00</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SCREEN 5: FORMULARIO MANUFACTURA (Basado exactamente en mockup-001) -->
-            <div id="screen-manufactura-form" style="display: none;">
-                <!-- Top Action Bar above sheet: Action buttons left (Col 1), Smart Buttons CENTERED (Col 2) -->
-                <div class="top-action-bar">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-primary fw-bold px-3">Subir Pdf</button>
-                        <button class="btn btn-sm btn-outline-secondary fw-bold px-3">Validar</button>
-                    </div>
-
-                    <!-- Smart Buttons Box (EN EL CENTRO / MEDIO según mockup-001) -->
-                    <div class="smart-buttons-wrapper">
-                        <div class="smart-buttons-box">
-                            <div class="smart-btn-item" onclick="navigateTo('pedido-form')" title="Navegar a Pedido de Venta originario (3192389)">
-                                <span>Pedido de venta</span>
-                                <span class="fw-bold">1</span>
-                            </div>
-                            <div class="smart-btn-item" onclick="navigateTo('manufactura-list')" title="Ver sub-órdenes de fabricación">
-                                <span>Órdenes de Fabricación</span>
-                                <span class="fw-bold">3</span>
-                            </div>
-                        </div>
-                        <span class="smart-buttons-label">SMART BUTTONS</span>
-                    </div>
-
-                    <div></div>
-                </div>
-
-                <div class="form-with-chatter-layout">
-                    <!-- Left Form Sheet Card -->
-                    <div class="form-sheet-card">
-                        <!-- Top Row inside sheet: Document Header info (Left) & Status Pipeline Etapas (Right) -->
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <div class="small text-muted fw-bold">Manufactura</div>
-                                <h2 class="fw-bold font-monospace text-primary m-0">IV214-26</h2>
-                            </div>
-
-                            <!-- Status Pipeline Etapas en la esquina superior derecha dentro del card (Fiel a mockup-001) -->
-                            <div class="sheet-pipeline-bar">
-                                <span class="sheet-pipeline-step">Borrador</span>
-                                <span>/</span>
-                                <span class="sheet-pipeline-step">Autorizado</span>
-                                <span>/</span>
-                                <span class="sheet-pipeline-step active">En progreso</span>
-                                <span>/</span>
-                                <span class="sheet-pipeline-step">Hecho</span>
-                            </div>
-                        </div>
-
-                        <!-- Info Grid -->
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-7">
-                                <div class="mb-1">
-                                    <span class="small text-muted me-2">Cliente:</span>
-                                    <span class="fw-bold fs-6 text-dark">Vidrios de Mexico SA de CV</span>
-                                </div>
-                                <div>
-                                    <span class="small text-muted d-block">Ubicacion:</span>
-                                    <span class="small font-semibold text-dark">Planta Gracia, Carr. Mty Garcia Km s/n, Garcia N.L. C.P. 66000</span>
-                                </div>
-                            </div>
-
-                            <div class="col-md-5 text-md-end">
-                                <div class="mb-1">
-                                    <span class="small text-muted">Fecha: </span>
-                                    <span class="fw-semibold text-dark">23 abril 2026</span>
-                                </div>
-                                <div>
-                                    <span class="small text-muted">Fecha est. Entrega: </span>
-                                    <span class="fw-semibold text-dark">05 mayo 2026</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Notebook Tabs -->
-                        <div class="notebook-nav-tabs">
-                            <button class="nav-link active">Detalle</button>
-                            <button class="nav-link">Adicionales</button>
-                        </div>
-
-                        <table class="notebook-table">
-                            <thead>
-                                <tr>
-                                    <th>Codigo</th>
-                                    <th>No. Parte.</th>
-                                    <th>Descripcion</th>
-                                    <th class="text-end">Cantidad</th>
-                                    <th class="text-end">Precio</th>
-                                    <th class="text-end">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody class="font-monospace">
-                                <tr>
-                                    <td class="fw-bold text-primary">51380V205</td>
-                                    <td>4010004547</td>
-                                    <td>Rollo tubular 20.5 x370 BD TPT...</td>
-                                    <td class="text-end fw-semibold">500</td>
-                                    <td class="text-end">51</td>
-                                    <td class="text-end fw-bold">25000</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Right Side Chatter Drawer Card (Basado en mockup-001) -->
-                    <div class="chatter-panel-card">
-                        <div class="chatter-top-input">
-                            <div class="input-group input-group-sm">
-                                <input type="text" id="mfgChatterInput" class="form-control" placeholder="Escribir nota..." onkeydown="if(event.key==='Enter') sendChatterNote('mfgChatterInput', 'mfgChatterFeed')">
-                                <button class="btn btn-primary btn-sm fw-semibold" onclick="sendChatterNote('mfgChatterInput', 'mfgChatterFeed')">Send</button>
-                            </div>
-                        </div>
-
-                        <div class="chatter-feed-body" id="mfgChatterFeed">
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.725rem;">
-                                    <span class="fw-bold text-dark">Sistema Odoo 19</span>
-                                    <span>12:35 pm</span>
-                                </div>
-                                <div class="small text-muted">Orden de manufactura IV214-26 en estado 'En progreso'</div>
-                            </div>
-
-                            <div class="chatter-watermark">
-                                CHATTER
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AUXILIARY SCREENS -->
-            <div id="screen-calidad" style="display: none;">
-                <h5 class="fw-bold text-dark mb-3">Control de Calidad</h5>
-                <div class="alert alert-info">Quality Gate activo para la planta.</div>
-            </div>
-
-            <div id="screen-configuracion" style="display: none;">
-                <h5 class="fw-bold text-dark mb-3">Configuracion</h5>
-                <p class="text-muted">Ajustes del sistema PolyConecta</p>
-            </div>
-
-        </main>
+        </div>
     </div>
 
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let currentScreen = 'dashboard';
+    <!-- CONTENT BODY (FORM SHEET / LIST / KANBAN + CHATTER) -->
+    <div class="o_content_body">
+        
+        <!-- MAIN FORM / VIEW CONTAINER -->
+        <div class="o_form_view_container" id="mainContainer">
+            <!-- Dynamic Content Injected Here -->
+        </div>
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('appSidebar');
-            const icon = document.getElementById('sidebarToggleIcon');
-            sidebar.classList.toggle('collapsed');
-            
-            if (sidebar.classList.contains('collapsed')) {
-                icon.className = 'bi bi-arrow-right-short fs-5';
-            } else {
-                icon.className = 'bi bi-arrow-left-short fs-5';
+        <!-- CHATTER PANEL (Right Side Docked) -->
+        <aside class="o_chatter">
+            <div class="o_chatter_topbar">
+                <button class="btn btn-sm btn-brand-primary" onclick="sendChatterMsg()"><i class="bi bi-send me-1"></i> Enviar mensaje</button>
+                <button class="btn btn-sm btn-outline-warning text-dark fw-semibold" onclick="sendChatterNote()"><i class="bi bi-sticky me-1"></i> Nota interna</button>
+            </div>
+            <div class="px-3 py-2 border-bottom bg-white d-flex justify-content-between align-items-center small text-muted">
+                <span>Seguidores: <strong>3 (AC, Ventas, Crédito)</strong></span>
+                <i class="bi bi-person-plus cursor-pointer" title="Añadir seguidor"></i>
+            </div>
+            <div class="o_chatter_body" id="chatterList">
+                <div class="o_chatter_msg internal-note">
+                    <div class="d-flex justify-content-between text-muted mb-1" style="font-size:0.7rem;">
+                        <strong>Sistema CONTPAQi SDK</strong>
+                        <span>Hace 12 min</span>
+                    </div>
+                    <div>Pedido de venta <code>PED-2026-3192389</code> sincronizado con 0 archivos adjuntos (Campos de usuario de Extrusión y Conversión cargados).</div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- REACTIVE JAVASCRIPT CONTROLLER -->
+    <script>
+        const AppState = {
+            activeModule: 'pedidos', // pedidos, om, of, wo, centros, personal, productos, almacenes, calidad, handheld, balance, logistica
+            currentViewMode: 'form', // form, list, kanban
+            data: {
+                salesOrder: {
+                    folio: 'PED-2026-3192389',
+                    customer: 'Vidrios de México S.A. de C.V.',
+                    sku: 'PT-BOL-POL-6080-01',
+                    requestedThou: 50.0,
+                    targetKg: 1250.0,
+                    state: 'Borrador',
+                    salesApproved: false,
+                    creditApproved: false,
+                    ext: { resin: 'LDPE Virgin 95% + Blanco 5%', gauge: 50, width: 600, corona: '38 Dynes' },
+                    bol: { width: 60, length: 80, seal: 'Sello Fondo + Suaje Camiseta', inks: '2 Tintas Flexo', ratio: 25.0 }
+                },
+                masterOrder: { folio: 'OM-2026-0421', state: 'Borrador', targetKg: 1250.0, producedKg: 1225.0, scrapKg: 25.0 },
+                ofs: [
+                    { folio: 'OF-EXT-2026-01', process: 'Extrusión', plant: 'PIM Apodaca', state: 'Borrador', wo: 'WO-EXT-01', machine: 'Por programar', bomLoaded: false, closed: false },
+                    { folio: 'OF-IMP-2026-01', process: 'Impresión', plant: 'PIM Apodaca', state: 'Borrador', wo: 'WO-IMP-01', machine: 'Por programar', bomLoaded: false, closed: false },
+                    { folio: 'OF-BOL-2026-01', process: 'Bolseo', plant: 'Santa Cruz', state: 'Borrador', wo: 'WO-BOL-01', machine: 'Por programar', bomLoaded: false, closed: false, thou: 0, netKg: 0 }
+                ],
+                wos: [
+                    { folio: 'WO-EXT-01', op: 'Extrusión Coex 3 Capas', machine: 'Por programar', operator: 'Juan Pérez', state: 'Por programar' },
+                    { folio: 'WO-IMP-01', op: 'Impresión Flexo 2 Tintas', machine: 'Por programar', operator: 'Carlos Rivas', state: 'Por programar' },
+                    { folio: 'WO-BOL-01', op: 'Corte, Sello y Suaje', machine: 'Por programar', operator: 'Mateo López', state: 'Por programar' }
+                ],
+                workCenters: [
+                    { id: 'PIM-EXT-01', name: 'Coextrusora 3 Capas Coex-1', plant: 'PIM Apodaca', capacity: '150 kg/h', state: 'Disponible', op: 'Juan Pérez' },
+                    { id: 'PIM-EXT-02', name: 'Coextrusora High-Speed 2', plant: 'PIM Apodaca', capacity: '220 kg/h', state: 'Disponible', op: 'Sin asignar' },
+                    { id: 'STC-IMP-01', name: 'Flexográfica SC 4 Color', plant: 'Santa Cruz', capacity: '300 m/min', state: 'Disponible', op: 'Carlos Rivas' },
+                    { id: 'STC-BOL-01', name: 'Bolseadora Alta Velocidad 1', plant: 'Santa Cruz', capacity: '120 bolsas/min', state: 'Disponible', op: 'Mateo López' }
+                ],
+                employees: [
+                    { id: 'EMP-001', name: 'Roosvelt V.', role: 'Planner MRP', plant: 'PIM Apodaca' },
+                    { id: 'EMP-002', name: 'Juan Pérez', role: 'Operador Extrusión Senior', plant: 'PIM Apodaca' },
+                    { id: 'EMP-003', name: 'Carlos Rivas', role: 'Operador Flexo', plant: 'Santa Cruz' },
+                    { id: 'EMP-004', name: 'Mateo López', role: 'Operador Bolseadora', plant: 'Santa Cruz' }
+                ],
+                products: [
+                    { code: 'PT-BOL-POL-6080-01', name: 'Bolsa Polietileno High Clarity 60x80cm', type: 'Producto Terminado', stock: '12,500 KG' },
+                    { code: 'INT-ROL-LDPE-600', name: 'Rollo Bobina LDPE 600mm Cal 50mic', type: 'Rollo Intermedio', stock: '925 KG' },
+                    { code: 'MP-RES-LDPE-01', name: 'Resina Polietileno Baja Densidad', type: 'Materia Prima', stock: '45,000 KG' }
+                ],
+                locations: [
+                    { id: 'PIM/Stock/MP', name: 'Materia Prima Apodaca', stock: '45,000 kg' },
+                    { id: 'PIM/Stock/PT', name: 'Rollos Extruidos PIM', stock: '925 kg' },
+                    { id: 'PIM/Stock/Cuarentena', name: 'Aislamiento Cuarentena (.S)', stock: '300 kg' },
+                    { id: 'TRANSIT/PIM-STC', name: 'Traspaso en Tránsito', stock: '1,250 kg' },
+                    { id: 'STC/Stock/MP', name: 'Materia Prima Santa Cruz', stock: '18,000 kg' }
+                ],
+                slots: [
+                    { id: 'IV214-26-R001', slot: 1, net: 300, status: 'Aprobado' },
+                    { id: 'IV214-26-R002', slot: 2, net: 310, status: 'Aprobado' },
+                    { id: 'IV214-26-R003', slot: 3, net: 315, status: 'Aprobado' },
+                    { id: 'IV214-26-R004.S', slot: 4, net: 300, status: 'Cuarentena (.S)' }
+                ],
+                picking: { id: 'TR-PIM-STC-001', state: 'Borrador', ref: 'Traspaso Pendiente ERP' },
+                massBalance: { status: 'Pendiente Cierre Técnico' }
+            }
+        };
+
+        function showModule(moduleName) {
+            AppState.activeModule = moduleName;
+            document.querySelectorAll('.o_main_navbar .nav-item-link').forEach(l => l.classList.remove('active'));
+            const activeMenu = document.getElementById('menu-' + moduleName);
+            if (activeMenu) activeMenu.classList.add('active');
+
+            updateBreadcrumb();
+            renderMainContent();
+        }
+
+        function switchViewMode(mode) {
+            AppState.currentViewMode = mode;
+            document.querySelectorAll('.o_view_switcher .btn-view').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-view-' + mode).classList.add('active');
+            renderMainContent();
+        }
+
+        function updateBreadcrumb() {
+            const container = document.getElementById('breadcrumbContainer');
+            const titles = {
+                pedidos: ['Pedidos CONTPAQi', AppState.data.salesOrder.folio],
+                om: ['Órdenes Maestra (OM)', AppState.data.masterOrder.folio],
+                of: ['Órdenes Fabricación (OF)', AppState.data.ofs[0].folio],
+                wo: ['Órdenes Trabajo (WO)', 'Piso de Planta'],
+                centros: ['Centros de Trabajo', 'Catálogo Máquinas'],
+                personal: ['Personal & Operadores', 'Planta Apodaca/SC'],
+                productos: ['Catálogo de Productos', 'SKUs'],
+                almacenes: ['Almacenes & Ubicaciones', 'Stock Real'],
+                calidad: ['Control de Calidad', 'Fichas Quality Check'],
+                handheld: ['Terminal Báscula Handheld', 'Slots & Lotes'],
+                balance: ['Balance de Masa', 'Cierre Técnico ERP'],
+                logistica: ['Logística & Ruteo', 'Traspasos 2 Pasos']
+            };
+            const current = titles[AppState.activeModule] || ['Módulo', 'Registro'];
+            container.innerHTML = `
+                <span class="parent-item" onclick="showModule('${AppState.activeModule}')">${current[0]}</span>
+                <i class="bi bi-chevron-right text-muted opacity-50 small"></i>
+                <span class="current-item">${current[1]}</span>
+            `;
+            document.getElementById('currentBreadcrumbDoc').innerText = current[1];
+        }
+
+        function renderMainContent() {
+            const main = document.getElementById('mainContainer');
+            if (AppState.currentViewMode === 'list') {
+                main.innerHTML = renderListView();
+                return;
+            }
+            if (AppState.currentViewMode === 'kanban') {
+                main.innerHTML = renderKanbanView();
+                return;
+            }
+
+            // Default: Form Sheet View
+            switch (AppState.activeModule) {
+                case 'pedidos': main.innerHTML = renderFormPedido(); break;
+                case 'om': main.innerHTML = renderFormOm(); break;
+                case 'of': main.innerHTML = renderFormOf(); break;
+                case 'wo': main.innerHTML = renderFormWo(); break;
+                case 'centros': main.innerHTML = renderFormCentros(); break;
+                case 'personal': main.innerHTML = renderFormPersonal(); break;
+                case 'productos': main.innerHTML = renderFormProductos(); break;
+                case 'almacenes': main.innerHTML = renderFormAlmacenes(); break;
+                case 'calidad': main.innerHTML = renderFormCalidad(); break;
+                case 'handheld': main.innerHTML = renderFormHandheld(); break;
+                case 'balance': main.innerHTML = renderFormBalance(); break;
+                case 'logistica': main.innerHTML = renderFormLogistica(); break;
+                default: main.innerHTML = renderFormPedido();
             }
         }
 
-        function navigateTo(screenId) {
-            currentScreen = screenId;
+        /* CANONICAL ODOO FORM SHEET RENDERERS */
+        function renderFormPedido() {
+            const so = AppState.data.salesOrder;
+            return `
+                <div class="o_form_sheet">
+                    <!-- Statusbar Header (Actions Left, Pipeline Right) -->
+                    <div class="o_statusbar">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-brand-primary btn-sm px-3" onclick="actConfirmPedido()"><i class="bi bi-check-circle me-1"></i> Confirmar (AC)</button>
+                            <button class="btn ${so.salesApproved ? 'btn-success' : 'btn-outline-primary'} btn-sm px-3" onclick="actApproveSales()"><i class="bi bi-pencil-square me-1"></i> Validar Ventas</button>
+                            <button class="btn ${so.creditApproved ? 'btn-success' : 'btn-outline-primary'} btn-sm px-3" onclick="actApproveCredit()"><i class="bi bi-credit-card me-1"></i> Validar Crédito</button>
+                        </div>
+                        <div class="o_statusbar_status">
+                            <div class="o_status_btn ${so.state === 'Borrador' ? 'active' : 'done'}">Borrador</div>
+                            <div class="o_status_btn ${so.state === 'Confirmado' ? 'active' : (so.state === 'Autorizado' || so.state === 'En progreso' || so.state === 'Hecho' ? 'done' : '')}">Confirmado</div>
+                            <div class="o_status_btn ${so.state === 'Autorizado' ? 'active' : (so.state === 'En progreso' || so.state === 'Hecho' ? 'done' : '')}">Autorizado</div>
+                            <div class="o_status_btn ${so.state === 'En progreso' ? 'active' : (so.state === 'Hecho' ? 'done' : '')}">En progreso</div>
+                            <div class="o_status_btn ${so.state === 'Hecho' ? 'active' : ''}">Hecho</div>
+                        </div>
+                    </div>
 
-            // Hide all screens
-            const screens = ['dashboard', 'pedidos-list', 'pedido-form', 'manufactura-list', 'manufactura-form', 'calidad', 'configuracion'];
-            screens.forEach(s => {
-                const el = document.getElementById('screen-' + s);
-                if (el) el.style.display = 'none';
-            });
+                    <!-- Smart Buttons Box (Top Right inside Sheet) -->
+                    <div class="o_button_box">
+                        <div class="o_smart_button" onclick="showModule('om')">
+                            <i class="bi bi-diagram-3 fs-5 text-indigo"></i>
+                            <div class="stat-label"><span>OM Maestra</span><span class="stat-count">1</span></div>
+                        </div>
+                        <div class="o_smart_button" onclick="showModule('of')">
+                            <i class="bi bi-gear-wide-connected fs-5 text-teal"></i>
+                            <div class="stat-label"><span>OF Fabricación</span><span class="stat-count">3</span></div>
+                        </div>
+                        <div class="o_smart_button" onclick="showModule('handheld')">
+                            <i class="bi bi-qr-code-scan fs-5 text-dark"></i>
+                            <div class="stat-label"><span>Slots / Lotes</span><span class="stat-count">4</span></div>
+                        </div>
+                        <div class="o_smart_button" onclick="showModule('logistica')">
+                            <i class="bi bi-truck fs-5 text-danger"></i>
+                            <div class="stat-label"><span>Traspaso ERP</span><span class="stat-count">1</span></div>
+                        </div>
+                    </div>
 
-            // Show selected screen
-            const target = document.getElementById('screen-' + screenId);
-            if (target) target.style.display = 'block';
+                    <!-- Sheet Body -->
+                    <div class="o_sheet_body">
+                        <span class="badge badge-brand mb-1">Pedido de Venta CONTPAQi Premium</span>
+                        <h1 class="fw-bold font-monospace text-dark mb-4">${so.folio}</h1>
 
-            // Active sidebar state
-            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
-            let navId = 'nav-' + screenId.split('-')[0];
-            const activeNav = document.getElementById(navId);
-            if (activeNav) activeNav.classList.add('active');
-        }
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-semibold">Cliente Comercial ERP</label>
+                                <input type="text" class="form-control bg-light fw-bold" value="${so.customer}" readonly />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-semibold">Código SKU PT</label>
+                                <input type="text" class="form-control bg-light font-monospace fw-bold text-primary" value="${so.sku}" readonly />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-semibold">Millares Solicitados</label>
+                                <input type="text" class="form-control fw-bold text-success" value="${so.requestedThou} MIL" readonly />
+                            </div>
+                        </div>
 
-        function sendChatterNote(inputId, feedId) {
-            const input = document.getElementById(inputId);
-            const feed = document.getElementById(feedId);
-            const val = input.value.trim();
-            if (!val) return;
+                        <!-- Notebook Tabs -->
+                        <ul class="nav nav-tabs mb-3 border-bottom">
+                            <li class="nav-item"><a class="nav-link active fw-bold text-primary" href="#">Especificaciones Técnicas CONTPAQi</a></li>
+                            <li class="nav-item"><a class="nav-link text-muted" href="#" onclick="showModule('om')">Jerarquía OM & OFs</a></li>
+                        </ul>
 
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const item = document.createElement('div');
-            item.className = 'mb-3';
-            item.innerHTML = `
-                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.725rem;">
-                    <span class="fw-bold text-dark">Alejandro Porras</span>
-                    <span>${timeStr}</span>
+                        <div class="row g-4 p-3 bg-slate-50 border rounded">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-indigo border-bottom pb-2"><i class="bi bi-disc me-1"></i> Ficha Extrusión (Rollo)</h6>
+                                <div class="small">
+                                    <div class="mb-1"><strong>Resina:</strong> ${so.ext.resin}</div>
+                                    <div class="mb-1"><strong>Calibre / Ancho:</strong> ${so.ext.gauge} micras / ${so.ext.width} mm</div>
+                                    <div><strong>Tratamiento Corona:</strong> ${so.ext.corona}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-teal border-bottom pb-2"><i class="bi bi-scissors me-1"></i> Ficha Conversión (Bolsa)</h6>
+                                <div class="small">
+                                    <div class="mb-1"><strong>Medidas:</strong> ${so.bol.width} cm x ${so.bol.length} cm</div>
+                                    <div class="mb-1"><strong>Sello / Suaje:</strong> ${so.bol.seal}</div>
+                                    <div><strong>Factor Ficha:</strong> ${so.bol.ratio} Kg / Millar</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="small text-dark">${val}</div>
             `;
-            feed.insertBefore(item, feed.lastElementChild);
-            input.value = '';
         }
 
-        function handleSpotlightSearch(query) {
-            if (!query) return;
-            const q = query.toLowerCase();
-            if (q.includes('pedido') || q.includes('3192389')) navigateTo('pedido-form');
-            else if (q.includes('manufactura') || q.includes('iv214')) navigateTo('manufactura-form');
-            else if (q.includes('inicio') || q.includes('dash')) navigateTo('dashboard');
+        function renderFormOm() {
+            const om = AppState.data.masterOrder;
+            return `
+                <div class="o_form_sheet">
+                    <div class="o_statusbar">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-brand-primary btn-sm px-3" onclick="showModule('of')"><i class="bi bi-gear-wide-connected me-1"></i> Ver OFs por Proceso</button>
+                        </div>
+                        <div class="o_statusbar_status">
+                            <div class="o_status_btn ${om.state === 'Borrador' ? 'active' : 'done'}">Borrador</div>
+                            <div class="o_status_btn ${om.state === 'Confirmada' ? 'active' : (om.state === 'En progreso' || om.state === 'Hecho' ? 'done' : '')}">Confirmada</div>
+                            <div class="o_status_btn ${om.state === 'En progreso' ? 'active' : (om.state === 'Hecho' ? 'done' : '')}">En progreso</div>
+                            <div class="o_status_btn ${om.state === 'Hecho' ? 'active' : ''}">Hecho</div>
+                        </div>
+                    </div>
+
+                    <div class="o_button_box">
+                        <div class="o_smart_button" onclick="showModule('pedidos')"><i class="bi bi-cart-check fs-5 text-primary"></i><div class="stat-label"><span>Pedido ERP</span><span class="stat-count">1</span></div></div>
+                        <div class="o_smart_button" onclick="showModule('of')"><i class="bi bi-gear-wide-connected fs-5 text-teal"></i><div class="stat-label"><span>OF Proceso</span><span class="stat-count">3</span></div></div>
+                    </div>
+
+                    <div class="o_sheet_body">
+                        <span class="badge badge-brand mb-1">Orden de Manufactura Maestra</span>
+                        <h2 class="fw-bold font-monospace text-dark mb-3">${om.folio}</h2>
+                        <p class="text-muted small">Ligada 1:1 al Pedido CONTPAQi <code>${AppState.data.salesOrder.folio}</code>.</p>
+                        
+                        <table class="table table-hover border align-middle mt-3">
+                            <thead class="table-light"><tr><th>Folio OF</th><th>Proceso</th><th>Planta</th><th>Estado</th><th>WO Asignada</th></tr></thead>
+                            <tbody>
+                                ${AppState.data.ofs.map(o => `
+                                    <tr>
+                                        <td><strong class="text-primary">${o.folio}</strong></td>
+                                        <td><span class="badge bg-secondary">${o.process}</span></td>
+                                        <td>${o.plant}</td>
+                                        <td><span class="badge ${o.state === 'Hecho' ? 'bg-success' : 'bg-warning text-dark'}">${o.state}</span></td>
+                                        <td><code>${o.wo}</code></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            navigateTo('dashboard');
+        function renderFormOf() {
+            const ofExt = AppState.data.ofs[0];
+            return `
+                <div class="o_form_sheet">
+                    <div class="o_statusbar">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success btn-sm fw-bold" onclick="actParseBomExt()"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Parsear BoM Excel</button>
+                            <button class="btn btn-brand-primary btn-sm" onclick="actAssignExtruder()"><i class="bi bi-play-fill me-1"></i> Programar Máquina (PIM-EXT-01)</button>
+                        </div>
+                        <div class="o_statusbar_status">
+                            <div class="o_status_btn ${ofExt.state === 'Borrador' ? 'active' : 'done'}">Borrador</div>
+                            <div class="o_status_btn ${ofExt.state === 'En progreso' ? 'active' : (ofExt.state === 'Cierre Técnico' || ofExt.state === 'Hecho' ? 'done' : '')}">En progreso</div>
+                            <div class="o_status_btn ${ofExt.state === 'Cierre Técnico' ? 'active' : (ofExt.state === 'Hecho' ? 'done' : '')}">Cierre Técnico</div>
+                            <div class="o_status_btn ${ofExt.state === 'Hecho' ? 'active' : ''}">Hecho</div>
+                        </div>
+                    </div>
+
+                    <div class="o_button_box">
+                        <div class="o_smart_button" onclick="showModule('wo')"><i class="bi bi-card-checklist fs-5 text-warning"></i><div class="stat-label"><span>WO Trabajo</span><span class="stat-count">1</span></div></div>
+                        <div class="o_smart_button" onclick="showModule('handheld')"><i class="bi bi-qr-code-scan fs-5 text-dark"></i><div class="stat-label"><span>Slots Báscula</span><span class="stat-count">4</span></div></div>
+                        <div class="o_smart_button" onclick="showModule('balance')"><i class="bi bi-calculator fs-5 text-primary"></i><div class="stat-label"><span>Balance Masa</span><span class="stat-count">1,250 kg</span></div></div>
+                    </div>
+
+                    <div class="o_sheet_body">
+                        <h2 class="fw-bold font-monospace m-0 mb-3">${ofExt.folio} (Extrusión Coex 3 Capas)</h2>
+                        <div class="p-3 border rounded bg-slate-50 mb-3">
+                            <h6 class="fw-bold text-indigo"><i class="bi bi-layers me-2"></i> Receta de Extrusión 3 Capas</h6>
+                            <small class="text-muted">${AppState.data.salesOrder.ext.resin}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFormWo() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-card-checklist text-warning me-2"></i> Órdenes de Trabajo (Piso de Planta)</h4>
+                    <table class="table table-hover border align-middle">
+                        <thead class="table-light"><tr><th>Folio WO</th><th>Operación</th><th>Máquina</th><th>Operador</th><th>Estado</th></tr></thead>
+                        <tbody>
+                            ${AppState.data.wos.map(w => `
+                                <tr>
+                                    <td><strong class="text-primary">${w.folio}</strong></td>
+                                    <td>${w.op}</td>
+                                    <td><span class="badge bg-dark">${w.machine}</span></td>
+                                    <td>${w.operator}</td>
+                                    <td><span class="badge ${w.state === 'En progreso' ? 'bg-primary' : 'bg-secondary'}">${w.state}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderFormCentros() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-cpu text-danger me-2"></i> Centros de Trabajo (Máquinas)</h4>
+                    <div class="row g-3">
+                        ${AppState.data.workCenters.map(mc => `
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded bg-white shadow-xs">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <h6 class="fw-bold m-0 text-primary">${mc.name}</h6>
+                                        <span class="badge bg-success">${mc.state}</span>
+                                    </div>
+                                    <div class="small text-muted mb-2">Planta: ${mc.plant} | Capacidad: ${mc.capacity}</div>
+                                    <div class="small"><strong>Operador:</strong> ${mc.op}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFormPersonal() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-people text-success me-2"></i> Personal & Operadores</h4>
+                    <div class="row g-3">
+                        ${AppState.data.employees.map(e => `
+                            <div class="col-md-4">
+                                <div class="p-3 border rounded bg-white">
+                                    <div class="fw-bold text-dark mb-1">${e.name}</div>
+                                    <div class="small text-primary fw-semibold">${e.role}</div>
+                                    <div class="small text-muted">${e.plant}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFormProductos() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-box-seam text-info me-2"></i> Catálogo de Productos</h4>
+                    <table class="table table-hover border align-middle">
+                        <thead class="table-light"><tr><th>Código SKU</th><th>Descripción</th><th>Tipo</th><th>Stock</th></tr></thead>
+                        <tbody>
+                            ${AppState.data.products.map(p => `
+                                <tr>
+                                    <td><strong class="text-primary font-monospace">${p.code}</strong></td>
+                                    <td>${p.name}</td>
+                                    <td><span class="badge bg-light text-dark border">${p.type}</span></td>
+                                    <td class="fw-bold text-success">${p.stock}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderFormAlmacenes() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-houses text-secondary me-2"></i> Almacenes & Ubicaciones</h4>
+                    <div class="row g-3">
+                        ${AppState.data.locations.map(l => `
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded bg-white">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="text-primary font-monospace">${l.id}</strong>
+                                        <span class="badge ${l.id.includes('Cuarentena') ? 'bg-danger' : 'bg-secondary'}">${l.stock}</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">${l.name}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFormCalidad() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-shield-check text-success me-2"></i> Quality Checks & Calidad</h4>
+                    <table class="table table-hover border align-middle">
+                        <thead class="table-light"><tr><th>Lote</th><th>Calibre</th><th>Estado</th></tr></thead>
+                        <tbody>
+                            ${AppState.data.slots.map(s => `
+                                <tr>
+                                    <td><strong class="${s.status.includes('Cuarentena') ? 'text-danger' : 'text-primary'} font-monospace">${s.id}</strong></td>
+                                    <td>${s.net} kg / 50 micras</td>
+                                    <td><span class="badge ${s.status.includes('Cuarentena') ? 'bg-danger' : 'bg-success'}">${s.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderFormHandheld() {
+            return `
+                <div class="o_form_sheet p-4 bg-light border-dark">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-phone text-warning me-2"></i> Terminal Báscula & Slots</h4>
+                    <div class="row g-3">
+                        ${AppState.data.slots.map(s => `
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded bg-white">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Rollo ${s.slot} (<code>${s.id}</code>)</strong>
+                                        <span class="badge ${s.status.includes('Cuarentena') ? 'bg-danger' : 'bg-success'}">${s.status}</span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-success flex-grow-1" onclick="actWeighRoll(${s.slot}, true)">Aprobar (${s.net} kg)</button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="actWeighRoll(${s.slot}, false)">Rechazar (.S)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFormBalance() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-calculator text-primary me-2"></i> Balance de Masa & Cierre ERP</h4>
+                    <div class="p-3 border rounded bg-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Afectación Consolidada CONTPAQi Premium:</strong>
+                            <div class="small text-muted">${AppState.data.massBalance.status}</div>
+                        </div>
+                        <button class="btn btn-brand-primary btn-sm px-4" onclick="actExecuteClosure()"><i class="bi bi-box-arrow-in-down me-1"></i> Cierre Técnico & ERP</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFormLogistica() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-truck text-danger me-2"></i> Logística & Traspaso Interplanta 2 Pasos</h4>
+                    <div class="row g-4 align-items-center mb-3">
+                        <div class="col-md-5">
+                            <div class="p-3 border rounded bg-primary-subtle border-primary">
+                                <span class="badge bg-primary mb-2">Paso 1: Salida PIM</span>
+                                <button class="btn btn-sm btn-primary w-100 fw-bold" onclick="actDispatchTransfer()">Validar Salida PIM</button>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center"><i class="bi bi-arrow-right-circle-fill fs-2 text-muted"></i></div>
+                        <div class="col-md-5">
+                            <div class="p-3 border rounded bg-light">
+                                <span class="badge bg-success mb-2">Paso 2: Recepción SC</span>
+                                <button class="btn btn-sm btn-success w-100 fw-bold" onclick="actReceiveTransfer()">Validar Recepción SC</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info small m-0 font-monospace">${AppState.data.picking.ref}</div>
+                </div>
+            `;
+        }
+
+        /* LIST & KANBAN GENERIC RENDERERS */
+        function renderListView() {
+            return `
+                <div class="o_form_sheet p-4">
+                    <h5 class="fw-bold text-dark mb-3">Vista Lista — ${AppState.activeModule.toUpperCase()}</h5>
+                    <table class="table table-hover border align-middle">
+                        <thead class="table-light"><tr><th><input type="checkbox"></th><th>Referencia / Folio</th><th>Descripción</th><th>Estado</th></tr></thead>
+                        <tbody>
+                            <tr onclick="switchViewMode('form')" style="cursor:pointer;">
+                                <td><input type="checkbox"></td>
+                                <td><strong class="text-primary">PED-2026-3192389</strong></td>
+                                <td>Vidrios de México S.A. de C.V. (50 MIL)</td>
+                                <td><span class="badge bg-primary">${AppState.data.salesOrder.state}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderKanbanView() {
+            return `
+                <div class="w-100 p-2">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="p-2 bg-light border rounded fw-bold small mb-2 text-muted">Borrador</div>
+                            <div class="kanban-card" onclick="switchViewMode('form')">
+                                <div class="fw-bold text-primary">${AppState.data.salesOrder.folio}</div>
+                                <div class="small text-muted mb-2">${AppState.data.salesOrder.customer}</div>
+                                <span class="badge bg-secondary">Borrador</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-2 bg-light border rounded fw-bold small mb-2 text-muted">En progreso</div>
+                            <div class="kanban-card" onclick="showModule('of')">
+                                <div class="fw-bold text-teal">OF-EXT-2026-01</div>
+                                <div class="small text-muted mb-2">Coextrusora 1 (PIM-EXT-01)</div>
+                                <span class="badge bg-primary">En progreso</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ACTIONS & CHATTER LOGGING */
+        function addChatter(text, isNote = false) {
+            const list = document.getElementById('chatterList');
+            const msg = document.createElement('div');
+            msg.className = 'o_chatter_msg ' + (isNote ? 'internal-note' : '');
+            msg.innerHTML = `
+                <div class="d-flex justify-content-between text-muted mb-1" style="font-size:0.7rem;">
+                    <strong>Usuario Activo</strong>
+                    <span>${new Date().toLocaleTimeString()}</span>
+                </div>
+                <div>${text}</div>
+            `;
+            list.prepend(msg);
+        }
+
+        function sendChatterMsg() {
+            addChatter('Mensaje de seguimiento registrado en la ficha del documento.');
+        }
+
+        function sendChatterNote() {
+            addChatter('Nota interna de auditoría para el equipo de producción.', true);
+        }
+
+        function actConfirmPedido() {
+            AppState.data.salesOrder.state = 'Confirmado';
+            AppState.data.masterOrder.state = 'Confirmada';
+            addChatter('Atención a Clientes confirmó el Pedido <code>PED-2026-3192389</code>. Estado: <strong>Confirmado</strong>.');
+            renderMainContent();
+        }
+
+        function actApproveSales() {
+            AppState.data.salesOrder.salesApproved = true;
+            addChatter('Ventas aprobó comercialmente el pedido.');
+            checkAuth();
+            renderMainContent();
+        }
+
+        function actApproveCredit() {
+            AppState.data.salesOrder.creditApproved = true;
+            addChatter('Crédito y Cobranza autorizó el pedido en CONTPAQi.');
+            checkAuth();
+            renderMainContent();
+        }
+
+        function checkAuth() {
+            if (AppState.data.salesOrder.salesApproved && AppState.data.salesOrder.creditApproved) {
+                AppState.data.salesOrder.state = 'Autorizado';
+                addChatter('<strong>Pedido Autorizado al 100%</strong> por Ventas y Crédito. Jerarquía MRP activada.');
+            }
+        }
+
+        function actParseBomExt() {
+            AppState.data.ofs[0].bomLoaded = true;
+            addChatter('Planner parseó la receta Excel de 3 Capas para <code>OF-EXT-2026-01</code>. Materia Prima reservada.');
+            renderMainContent();
+        }
+
+        function actAssignExtruder() {
+            AppState.data.ofs[0].state = 'En progreso';
+            AppState.data.ofs[0].machine = 'Coextrusora 1 (PIM-EXT-01)';
+            AppState.data.wos[0].state = 'En progreso';
+            AppState.data.salesOrder.state = 'En progreso';
+            addChatter('Máquina <code>PIM-EXT-01</code> asignada a <code>WO-EXT-01</code>. Estado: <strong>En progreso</strong>.');
+            renderMainContent();
+        }
+
+        function actWeighRoll(slotNum, pass) {
+            const slot = AppState.data.slots.find(s => s.slot === slotNum);
+            if (slot) {
+                if (pass) {
+                    slot.status = 'Aprobado';
+                    addChatter(`Rollo ${slotNum} (<code>${slot.id}</code>) aprobado en báscula y verificado por Calidad.`);
+                } else {
+                    slot.status = 'Cuarentena (.S)';
+                    slot.id = slot.id.includes('.S') ? slot.id : slot.id + '.S';
+                    addChatter(`Rollo ${slotNum} rechazado por calibre. Renombrado a <code>${slot.id}</code> y transferido a Cuarentena. Slot ${slotNum} liberado.`);
+                }
+            }
+            renderMainContent();
+        }
+
+        function actExecuteClosure() {
+            AppState.data.ofs[0].state = 'Cierre Técnico';
+            AppState.data.massBalance.status = 'Afectación Consolidada Ejecutada en CONTPAQi Premium (1,250 kg MP descontados)';
+            addChatter('<strong>Cierre Técnico Ejecutado:</strong> Único descuento masivo consolidado enviado a CONTPAQi Premium.');
+            renderMainContent();
+        }
+
+        function actDispatchTransfer() {
+            AppState.data.picking.state = 'En Tránsito';
+            AppState.data.picking.ref = 'En tránsito PIM -> SC (Sin afectación contable)';
+            addChatter('Traspaso Paso 1 validado: Salida de PIM a ubicación en tránsito <code>TRANSIT/PIM-STC</code>.');
+            renderMainContent();
+        }
+
+        function actReceiveTransfer() {
+            AppState.data.picking.state = 'Validado / Concretado';
+            AppState.data.picking.ref = 'Traspaso ERP CONTPAQi #TR-8821 Sincronizado OK';
+            AppState.data.ofs[2].state = 'En progreso';
+            addChatter('Traspaso Paso 2 validado en SC: Documento Traspaso <code>#TR-8821</code> generado en CONTPAQi. <code>OF-BOL-2026-01</code> iniciada en Santa Cruz.');
+            renderMainContent();
+        }
+
+        function handleSearch(q) {
+            if (!q) return;
+            const text = q.toLowerCase();
+            if (text.includes('ped')) showModule('pedidos');
+            else if (text.includes('om')) showModule('om');
+            else if (text.includes('of')) showModule('of');
+            else if (text.includes('wo')) showModule('wo');
+            else if (text.includes('lote') || text.includes('slot')) showModule('handheld');
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            showModule('pedidos');
         });
     </script>
 </body>

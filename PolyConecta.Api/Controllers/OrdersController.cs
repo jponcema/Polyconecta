@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PolyConecta.Domain.Entities;
@@ -31,12 +32,40 @@ public class OrdersController : ControllerBase
             return BadRequest(new { Error = "Target quantity must be greater than zero." });
         }
 
-        var sequence = await _db.MasterOrders.CountAsync(cancellationToken) + 1;
-        var folioOm = $"OM-2026-{sequence:D4}";
+        var sequence = await _db.ManufacturingOrders.CountAsync(x => x.ProcessType == "Master", cancellationToken) + 1;
+        var name = $"OM-2026-{sequence:D4}";
 
-        var masterOrder = new MasterOrder
+        var parentOrder = new ManufacturingOrder
         {
-            FolioOm = folioOm,
+            Name = name,
+            ProcessType = "Master",
+            ContpaqDocumentId = request.CidDocumentoPedido,
+            CustomerCode = request.CustomerCode,
+            ProductQtyTarget = request.TargetQuantityKg,
+            State = "Draft"
+        };
+
+        var processes = new[] { "Extrusion", "Printing", "Bagging" };
+        int procSeq = 1;
+        foreach (var proc in processes)
+        {
+            parentOrder.ChildOrders.Add(new ManufacturingOrder
+            {
+                Name = $"OF-{proc[..3].ToUpper(CultureInfo.InvariantCulture)}-2026-{sequence:D4}-{procSeq++}",
+                ProcessType = proc,
+                WorkCenterId = proc == "Extrusion" ? "EXT-01" : proc == "Printing" ? "IMP-01" : "BOL-01",
+                State = "Draft",
+                ProductQtyTarget = request.TargetQuantityKg
+            });
+        }
+
+        _db.ManufacturingOrders.Add(parentOrder);
+        
+        // Also seed legacy entity for backwards compatibility
+        var legacyMaster = new MasterOrder
+        {
+            Id = parentOrder.Id,
+            FolioOm = name,
             CidDocumentoPedido = request.CidDocumentoPedido,
             CustomerCode = request.CustomerCode,
             PtSku = request.PtSku,
@@ -44,13 +73,13 @@ public class OrdersController : ControllerBase
             Status = "Draft"
         };
 
-        var processes = new[] { "EXT", "IMP", "BOL" };
-        int procSeq = 1;
-        foreach (var proc in processes)
+        var legacyProcesses = new[] { "EXT", "IMP", "BOL" };
+        int legacyProcSeq = 1;
+        foreach (var proc in legacyProcesses)
         {
-            masterOrder.SubOrders.Add(new SubOrder
+            legacyMaster.SubOrders.Add(new SubOrder
             {
-                FolioOf = $"OF-{proc}-2026-{sequence:D4}-{procSeq++}",
+                FolioOf = $"OF-{proc}-2026-{sequence:D4}-{legacyProcSeq++}",
                 ProcessType = proc,
                 MachineId = proc == "EXT" ? "EXT-01" : proc == "IMP" ? "IMP-01" : "BOL-01",
                 Status = "Borrador",
@@ -58,17 +87,26 @@ public class OrdersController : ControllerBase
             });
         }
 
-        _db.MasterOrders.Add(masterOrder);
+        _db.MasterOrders.Add(legacyMaster);
+
         await _db.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetMasterOrderById), new { id = masterOrder.Id }, masterOrder);
+        return CreatedAtAction(nameof(GetMasterOrderById), new { id = parentOrder.Id }, parentOrder);
     }
 
     [HttpGet("master/{id}")]
     public async Task<IActionResult> GetMasterOrderById(Guid id, CancellationToken cancellationToken)
     {
-        var mo = await _db.MasterOrders.Include(x => x.SubOrders).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-        if (mo == null) return NotFound();
+        var mo = await _db.ManufacturingOrders
+            .Include(x => x.ChildOrders)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            
+        if (mo == null)
+        {
+            var legacy = await _db.MasterOrders.Include(x => x.SubOrders).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (legacy == null) return NotFound();
+            return Ok(legacy);
+        }
         return Ok(mo);
     }
 
@@ -77,10 +115,12 @@ public class OrdersController : ControllerBase
     [HttpPatch("sub-orders/{id}/status")]
     public async Task<IActionResult> UpdateSubOrderStatus(Guid id, [FromBody] UpdateStatusRequest request, CancellationToken cancellationToken)
     {
-        var validStatuses = new[] { "Borrador", "Programado", "En_Proceso", "Control_Calidad", "Finalizado", "Scrap" };
-        if (!validStatuses.Contains(request.NewStatus))
+        var mo = await _db.ManufacturingOrders.FindAsync(new object[] { id }, cancellationToken);
+        if (mo != null)
         {
-            return BadRequest(new { Error = $"Invalid status '{request.NewStatus}'." });
+            mo.State = request.NewStatus;
+            await _db.SaveChangesAsync(cancellationToken);
+            return Ok(mo);
         }
 
         var subOrder = await _db.SubOrders.FindAsync(new object[] { id }, cancellationToken);
