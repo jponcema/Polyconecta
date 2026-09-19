@@ -1,0 +1,30 @@
+@page "/piso/bascula"
+@inject OperationalFlowState Flow
+@implements IDisposable
+
+<div class="o_control_panel">
+    <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Terminal Handheld Báscula") })" />
+</div>
+
+<div class="p-4">
+    @if (ExtOf == null)
+    {
+        <div class="p-4 text-center text-muted border rounded bg-white">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            Sin Orden de Fabricación de Extrusión activa.
+        </div>
+    }
+    else
+    {
+        <PocHandheldScaleTerminal Lotes="@ExtOf.Produccion"
+                                   OnRegistered="@((args) => Flow.RegistrarPesajeRollo(ExtOf.Folio, args.Gross, args.Tare))" />
+    }
+</div>
+
+@code {
+    private ManufacturingOrder? ExtOf => Flow.GetOrder("EXT-2026-0001");
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+}

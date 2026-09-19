@@ -1,0 +1,120 @@
+@page "/fabricacion"
+@inject OperationalFlowState Flow
+@inject UiViewState ViewState
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="o_control_panel">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: las Órdenes de Fabricación nacen del Pedido">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo
+        </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Órdenes de Fabricación") })" />
+    </div>
+    <OdooSearchBox @bind-Value="searchText" />
+    <div class="d-flex align-items-center gap-2">
+        <OdooViewSwitcher />
+    </div>
+</div>
+
+<div class="p-4">
+    @if (ViewState.ViewMode == "Kanban")
+    {
+        <div class="o_kanban_board">
+            @foreach (var stage in Stages)
+            {
+                <div class="o_kanban_column">
+                    <div class="o_kanban_column_title">
+                        <span>@stage</span>
+                        <span class="badge bg-secondary">@FilteredOrders.Count(o => o.State == stage)</span>
+                    </div>
+                    @foreach (var of in FilteredOrders.Where(o => o.State == stage))
+                    {
+                        <div class="kanban-card" @onclick='() => NavManager.NavigateTo($"/fabricacion/{of.Folio}")'>
+                            <div class="fw-bold text-dark small">@of.Folio</div>
+                            <div class="text-muted small">@of.ProcessLabel</div>
+                            <div class="badge badge-brand mt-2">@of.State</div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <table class="table table-hover align-middle bg-white shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
+                    <th>Folio</th>
+                    <th>Origen</th>
+                    <th>Producto</th>
+                    <th>Proceso</th>
+                    <th class="text-end">Cantidad</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var of in FilteredOrders)
+                {
+                    <tr style="cursor:pointer;" class="@(selected.Contains(of.Folio) ? "table-active" : "")" @onclick='() => NavManager.NavigateTo($"/fabricacion/{of.Folio}")'>
+                        <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected.Contains(of.Folio)" @onchange="() => ToggleOne(of.Folio)" /></td>
+                        <td class="fw-semibold text-primary">@of.Folio</td>
+                        <td>
+                            @if (of.OriginFolio == null)
+                            {
+                                <span class="text-muted">— (maestra)</span>
+                            }
+                            else
+                            {
+                                <a href="/fabricacion/@of.OriginFolio" class="text-decoration-none" @onclick:stopPropagation="true">@of.OriginFolio</a>
+                            }
+                        </td>
+                        <td>@of.Producto</td>
+                        <td>@of.ProcessLabel</td>
+                        <td class="text-end">@of.Cantidad.ToString("N1") @of.Unidad</td>
+                        <td><span class="badge badge-brand">@of.State</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <OdooPager Count="@FilteredOrders.Count" />
+</div>
+
+@code {
+    private static readonly List<string> Stages = new() { "Borrador", "Planeado", "En progreso", "Hecho" };
+
+    private string searchText = "";
+    private readonly HashSet<string> selected = new();
+
+    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders.Where(o =>
+        string.IsNullOrWhiteSpace(searchText)
+        || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        || o.ProcessLabel.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void ToggleOne(string folio)
+    {
+        if (!selected.Remove(folio)) selected.Add(folio);
+    }
+
+    private void ToggleAll(ChangeEventArgs e)
+    {
+        var check = e.Value is bool b && b;
+        selected.Clear();
+        if (check) foreach (var of in FilteredOrders) selected.Add(of.Folio);
+    }
+
+    protected override void OnInitialized()
+    {
+        Flow.OnChange += StateHasChanged;
+        ViewState.OnStateChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Flow.OnChange -= StateHasChanged;
+        ViewState.OnStateChanged -= StateHasChanged;
+    }
+}

@@ -1,0 +1,346 @@
+@page "/fabricacion/{FolioOf}"
+@inject OperationalFlowState Flow
+@inject NavigationManager NavManager
+@implements IDisposable
+
+@if (Of == null)
+{
+    <div class="p-4">Orden de Fabricación no encontrada.</div>
+}
+else
+{
+    <div class="o_control_panel">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: las Órdenes de Fabricación nacen del Pedido">
+                <i class="bi bi-plus-lg me-1"></i> Nuevo
+            </button>
+            <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Órdenes de Fabricación", "/fabricacion"), new(FolioOf) })" />
+        </div>
+        <div class="o_button_box">
+            <OdooSmartButtons Buttons="@SmartButtons" OnSmartNavigate="@((route) => NavManager.NavigateTo(route))" />
+        </div>
+    </div>
+
+    <div class="p-4">
+        <div class="d-flex gap-3 align-items-start">
+            <div class="o_form_sheet flex-grow-1">
+                <div class="o_statusbar">
+                    <div class="d-flex align-items-center gap-2">
+                        @if (Of.State == "Borrador")
+                        {
+                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.Planear(FolioOf)" disabled="@(Of.Componentes.Count == 0 ? "disabled" : null)">
+                                <i class="bi bi-check-circle me-1"></i> Confirmar
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/fabricacion")'>Cancelar</button>
+                        }
+                        else if (Of.State != "Hecho")
+                        {
+                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.CerrarProduccion(FolioOf)" disabled="@(!PuedeCerrar ? "disabled" : null)">
+                                <i class="bi bi-box-arrow-in-down me-1"></i> Cerrar Producción
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/fabricacion")'>Cancelar</button>
+                        }
+                    </div>
+                    <OdooStatusPipeline Stages="@Stages" CurrentStage="@Of.State" />
+                </div>
+
+                <div class="o_sheet_body">
+                    <h3 class="fw-bold mb-1">Orden de fabricación</h3>
+                    <h4 class="fw-bold text-primary mb-3">@Of.Folio</h4>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="o_form_label_row"><span class="o_form_label">Producto</span><span class="o_form_value fw-semibold">@Of.Producto</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Cantidad</span><span class="o_form_value">@Of.Cantidad.ToString("N1") <span class="text-muted">@Of.Unidad</span></span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Proceso</span><span class="o_form_value">@Of.ProcessLabel</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Calidad</span><span class="o_form_value">@(Of.CalidadRequerida ? "Requerida" : "No requerida") — Almacén Falla: @Of.AlmacenFalla</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="o_form_label_row"><span class="o_form_label">Empresa</span><span class="o_form_value">@Of.Empresa</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Tiempo Estimado</span><span class="o_form_value">@Of.TiempoEstimadoHrs hrs</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">@Of.NumeroLabel</span><span class="o_form_value">@Of.NumeroRollos</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Fecha Esperada</span><span class="o_form_value">@Of.FechaEsperada.ToString("dd MMM yy")</span></div>
+                        </div>
+                    </div>
+
+                    @if (Tab == "componentes" && Of.State == "Borrador")
+                    {
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-6 col-md-2"><input class="form-control form-control-sm o_inline_input" placeholder="Clave" @bind="ComponenteClave" /></div>
+                            <div class="col-6 col-md-4"><input class="form-control form-control-sm o_inline_input" placeholder="Producto" @bind="ComponenteProducto" /></div>
+                            <div class="col-6 col-md-2"><input type="number" class="form-control form-control-sm o_inline_input" placeholder="Cantidad" @bind="ComponenteCantidad" /></div>
+                            <div class="col-6 col-md-2"><input class="form-control form-control-sm o_inline_input" placeholder="Unidad" @bind="ComponenteUnidad" /></div>
+                            <div class="col-12 col-md-2 d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary flex-grow-1" @onclick="GuardarComponente">
+                                    <i class="bi @(editingComponente == null ? "bi-plus-lg" : "bi-check-lg")"></i> @(editingComponente == null ? "Agregar" : "Guardar")
+                                </button>
+                                @if (editingComponente != null)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" title="Cancelar" @onclick="() => editingComponente = null"><i class="bi bi-x-lg"></i></button>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (Tab == "planeacion" && (Of.State == "Planeado" || Of.State == "En progreso"))
+                    {
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-6 col-md-2"><input class="form-control form-control-sm o_inline_input" placeholder="Centro trabajo" @bind="PlaneacionCentro" /></div>
+                            <div class="col-6 col-md-2"><input class="form-control form-control-sm o_inline_input" placeholder="Producto" @bind="PlaneacionProducto" /></div>
+                            <div class="col-6 col-md-1"><input type="number" class="form-control form-control-sm o_inline_input" placeholder="Cant." @bind="PlaneacionCantidad" /></div>
+                            <div class="col-6 col-md-1"><input type="number" class="form-control form-control-sm o_inline_input" placeholder="Hrs" @bind="PlaneacionHoras" /></div>
+                            <div class="col-6 col-md-2"><input type="datetime-local" class="form-control form-control-sm o_inline_input" @bind="PlaneacionFechaInicio" /></div>
+                            <div class="col-6 col-md-2"><input type="datetime-local" class="form-control form-control-sm o_inline_input" @bind="PlaneacionFechaFin" /></div>
+                            <div class="col-6 col-md-1"><input class="form-control form-control-sm o_inline_input" placeholder="Operador" @bind="PlaneacionOperador" /></div>
+                            <div class="col-6 col-md-1 d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary flex-grow-1" @onclick="GuardarPlaneacion" title="@(editingPlaneacion == null ? "Agregar" : "Guardar")">
+                                    <i class="bi @(editingPlaneacion == null ? "bi-plus-lg" : "bi-check-lg")"></i>
+                                </button>
+                                @if (editingPlaneacion != null)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" title="Cancelar" @onclick="() => editingPlaneacion = null"><i class="bi bi-x-lg"></i></button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item"><button class="nav-link @(Tab == "componentes" ? "active" : "")" @onclick='() => GoToTab("componentes")'>Componentes</button></li>
+                        <li class="nav-item"><button class="nav-link @(Tab == "subproductos" ? "active" : "")" @onclick='() => GoToTab("subproductos")'>Subproductos</button></li>
+                        <li class="nav-item"><button class="nav-link @(Tab == "produccion" ? "active" : "")" @onclick='() => GoToTab("produccion")'>Producción</button></li>
+                        <li class="nav-item"><button class="nav-link @(Tab == "planeacion" ? "active" : "")" @onclick='() => GoToTab("planeacion")'>Planeación</button></li>
+                    </ul>
+
+                    @if (Tab == "componentes")
+                    {
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="text-muted small"><tr><th>Clave</th><th>Producto</th><th class="text-end">Cantidad</th><th style="width:70px;">Unidad</th><th style="width:56px;"></th></tr></thead>
+                            <tbody>
+                                @foreach (var line in Of.Componentes.ToList())
+                                {
+                                    <tr class="@(editingComponente == line ? "table-active" : "")">
+                                        <td class="small">@line.Clave</td>
+                                        <td>@line.Producto</td>
+                                        <td class="text-end">@line.Cantidad.ToString("N1")</td>
+                                        <td class="small">@line.Unidad</td>
+                                        <td>
+                                            @if (Of.State == "Borrador")
+                                            {
+                                                <button class="btn btn-sm btn-link p-0 me-2" title="Editar" @onclick="() => editingComponente = line"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-link text-danger p-0" title="Eliminar" @onclick="() => Flow.QuitarComponente(FolioOf, line)"><i class="bi bi-x-circle-fill"></i></button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else if (Tab == "subproductos")
+                    {
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="text-muted small"><tr><th>Producto</th><th class="text-end">Cantidad</th><th style="width:70px;">Unidad</th><th style="width:90px;">Producido</th><th>Almacenar en</th></tr></thead>
+                            <tbody>
+                                @foreach (var sp in Of.Subproductos)
+                                {
+                                    <tr>
+                                        <td>@sp.Producto</td>
+                                        <td class="text-end">@sp.Cantidad.ToString("N1")</td>
+                                        <td class="small">@sp.Unidad</td>
+                                        <td><input type="checkbox" class="form-check-input" @bind="sp.Producido" /></td>
+                                        <td class="small">@sp.AlmacenDestino</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else if (Tab == "produccion")
+                    {
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="text-muted small"><tr><th>#</th><th>Producto</th><th>Lote</th><th class="text-end">Cantidad</th><th style="width:70px;">Unidad</th><th>Estado</th></tr></thead>
+                            <tbody>
+                                @if (Of.Produccion.Count == 0)
+                                {
+                                    <tr><td colspan="6" class="text-muted small fst-italic">Sin lotes capturados todavía.</td></tr>
+                                }
+                                @for (int i = 0; i < Of.Produccion.Count; i++)
+                                {
+                                    var lote = Of.Produccion[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td class="small">@Of.Producto</td>
+                                        <td><code>@lote.Lote</code></td>
+                                        <td class="text-end">@lote.Real.ToString("N1")</td>
+                                        <td class="small">@lote.Unidad</td>
+                                        <td><span class="badge @(lote.Estado == "Aprobado" ? "bg-success" : lote.Estado == "Rechazado" ? "bg-danger" : "bg-secondary")">@lote.Estado</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="text-muted small"><tr><th>Centro de trabajo</th><th>Producto</th><th class="text-end">Cantidad</th><th style="width:70px;">Unidad</th><th class="text-end">Horas Asignadas</th><th>Fecha inicio</th><th>Fecha Fin</th><th>Operador</th><th style="width:30px;"></th></tr></thead>
+                            <tbody>
+                                @foreach (var pl in Of.Planeacion)
+                                {
+                                    <tr class="@(editingPlaneacion == pl ? "table-active" : "")">
+                                        <td class="fw-semibold">@pl.CentroTrabajo</td>
+                                        <td class="small">@pl.Producto</td>
+                                        <td class="text-end">@pl.Cantidad.ToString("N1")</td>
+                                        <td class="small">@pl.Unidad</td>
+                                        <td class="text-end">@pl.HorasAsignadas.ToString("N1")</td>
+                                        <td class="small">@pl.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="small">@pl.FechaFin.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="small">@pl.Operador</td>
+                                        <td>
+                                            @if (Of.State == "Planeado" || Of.State == "En progreso")
+                                            {
+                                                <button class="btn btn-sm btn-link p-0" title="Editar" @onclick="() => editingPlaneacion = pl"><i class="bi bi-pencil"></i></button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+            <OdooChatterDrawer Messages="@chatterEntries" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string FolioOf { get; set; } = "";
+
+    private static readonly List<string> Stages = new() { "Borrador", "Planeado", "En progreso", "Hecho" };
+    private string Tab = "componentes";
+
+    private void GoToTab(string tab)
+    {
+        Tab = tab;
+        editingComponente = null;
+        editingPlaneacion = null;
+    }
+
+    private ManufacturingOrder? Of => Flow.GetOrder(FolioOf);
+    private bool PuedeCerrar => Of != null && (!Of.CalidadRequerida || Of.Produccion.All(l => l.Estado != "En revisión")) && Of.Produccion.Count > 0;
+
+    private BomLine? editingComponente;
+    private string nuevaClave = ""; private string nuevoProducto = ""; private decimal nuevaCantidad; private string nuevaUnidad = "KGS";
+
+    private PlanningLine? editingPlaneacion;
+    private string nuevoCentro = ""; private string nuevoProductoPlan = ""; private decimal nuevaCantidadPlan; private decimal nuevasHorasPlan; private DateTime nuevaFechaInicio = DateTime.Today; private DateTime nuevaFechaFin = DateTime.Today; private string nuevoOperador = "";
+
+    private string ComponenteClave
+    {
+        get => editingComponente?.Clave ?? nuevaClave;
+        set { if (editingComponente != null) editingComponente.Clave = value; else nuevaClave = value; }
+    }
+    private string ComponenteProducto
+    {
+        get => editingComponente?.Producto ?? nuevoProducto;
+        set { if (editingComponente != null) editingComponente.Producto = value; else nuevoProducto = value; }
+    }
+    private decimal ComponenteCantidad
+    {
+        get => editingComponente?.Cantidad ?? nuevaCantidad;
+        set { if (editingComponente != null) editingComponente.Cantidad = value; else nuevaCantidad = value; }
+    }
+    private string ComponenteUnidad
+    {
+        get => editingComponente?.Unidad ?? nuevaUnidad;
+        set { if (editingComponente != null) editingComponente.Unidad = value; else nuevaUnidad = value; }
+    }
+
+    private string PlaneacionCentro
+    {
+        get => editingPlaneacion?.CentroTrabajo ?? nuevoCentro;
+        set { if (editingPlaneacion != null) editingPlaneacion.CentroTrabajo = value; else nuevoCentro = value; }
+    }
+    private string PlaneacionProducto
+    {
+        get => editingPlaneacion?.Producto ?? nuevoProductoPlan;
+        set { if (editingPlaneacion != null) editingPlaneacion.Producto = value; else nuevoProductoPlan = value; }
+    }
+    private decimal PlaneacionCantidad
+    {
+        get => editingPlaneacion?.Cantidad ?? nuevaCantidadPlan;
+        set { if (editingPlaneacion != null) editingPlaneacion.Cantidad = value; else nuevaCantidadPlan = value; }
+    }
+    private decimal PlaneacionHoras
+    {
+        get => editingPlaneacion?.HorasAsignadas ?? nuevasHorasPlan;
+        set { if (editingPlaneacion != null) editingPlaneacion.HorasAsignadas = value; else nuevasHorasPlan = value; }
+    }
+    private DateTime PlaneacionFechaInicio
+    {
+        get => editingPlaneacion?.FechaInicio ?? nuevaFechaInicio;
+        set { if (editingPlaneacion != null) editingPlaneacion.FechaInicio = value; else nuevaFechaInicio = value; }
+    }
+    private DateTime PlaneacionFechaFin
+    {
+        get => editingPlaneacion?.FechaFin ?? nuevaFechaFin;
+        set { if (editingPlaneacion != null) editingPlaneacion.FechaFin = value; else nuevaFechaFin = value; }
+    }
+    private string PlaneacionOperador
+    {
+        get => editingPlaneacion?.Operador ?? nuevoOperador;
+        set { if (editingPlaneacion != null) editingPlaneacion.Operador = value; else nuevoOperador = value; }
+    }
+
+    private List<OdooSmartButtons.SmartButtonModel> SmartButtons
+    {
+        get
+        {
+            var list = new List<OdooSmartButtons.SmartButtonModel>();
+            var secundarias = Flow.GetSecondaries(FolioOf);
+            if (secundarias.Count > 0)
+                list.Add(new() { Label = "Orden de Fabricación Secundaria", CountBadge = secundarias.Count, IconClass = "bi bi-gear-wide-connected", TargetRoute = $"/fabricacion/{secundarias[0].Folio}" });
+
+            if (Of?.OriginFolio != null)
+                list.Add(new() { Label = "Orden de Fabricación Origen", CountBadge = 1, IconClass = "bi bi-diagram-3", TargetRoute = $"/fabricacion/{Of.OriginFolio}" });
+            else
+                list.Add(new() { Label = "Pedido", CountBadge = 1, IconClass = "bi bi-cart-check", TargetRoute = $"/pedidos/{OperationalFlowState.PedidoFolio}" });
+
+            if (secundarias.Count > 0)
+                list.Add(new() { Label = "Traslado", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = "/traslados/18293" });
+
+            list.Add(new() { Label = "Calidad", CountBadge = 1, IconClass = "bi bi-shield-check", TargetRoute = $"/calidad/{FolioOf}" });
+            return list;
+        }
+    }
+
+    private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
+    {
+        new() { Timestamp = "hoy", Text = "Orden de Fabricación generada." }
+    };
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+
+    private void GuardarComponente()
+    {
+        if (editingComponente != null)
+        {
+            editingComponente = null;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(nuevoProducto) || nuevaCantidad <= 0) return;
+        Flow.AgregarComponente(FolioOf, nuevaClave, nuevoProducto, nuevaCantidad, nuevaUnidad);
+        nuevaClave = ""; nuevoProducto = ""; nuevaCantidad = 0; nuevaUnidad = "KGS";
+    }
+
+    private void GuardarPlaneacion()
+    {
+        if (editingPlaneacion != null)
+        {
+            editingPlaneacion = null;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(nuevoCentro) || nuevaCantidadPlan <= 0) return;
+        Flow.AgregarPlaneacion(FolioOf, nuevoCentro, nuevoProductoPlan, nuevaCantidadPlan, Of!.Unidad, nuevasHorasPlan, nuevaFechaInicio, nuevaFechaFin, nuevoOperador);
+        nuevoCentro = ""; nuevoProductoPlan = ""; nuevaCantidadPlan = 0; nuevasHorasPlan = 0; nuevoOperador = "";
+    }
+}

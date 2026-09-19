@@ -2,11 +2,11 @@
     @foreach (var btn in Buttons)
     {
         <div class="o_smart_button" @onclick="() => OnButtonClick(btn.TargetRoute)">
-            <i class="@btn.IconClass"></i>
-            <div class="d-flex flex-column">
-                <span class="stat-count">@btn.CountBadge</span>
+            <div class="d-flex align-items-center gap-1">
+                <i class="@btn.IconClass"></i>
                 <span class="stat-label">@btn.Label</span>
             </div>
+            <span class="stat-count">@btn.CountBadge</span>
         </div>
     }
 </div>

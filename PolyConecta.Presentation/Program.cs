@@ -12,7 +12,6 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddSignalR();
 
-builder.Services.AddScoped<UiAppShellState>();
 builder.Services.AddScoped<UiViewState>();
 builder.Services.AddScoped<OperationalFlowState>();
 

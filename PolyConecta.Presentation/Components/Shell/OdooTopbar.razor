@@ -1,32 +1,76 @@
-@inject PolyConecta.Presentation.Services.UiAppShellState ShellState
 @inject NavigationManager Nav
+@implements IDisposable
 
 <header class="o_main_navbar">
-    <div>
-        <button class="app-brand" @onclick="GoHome">
+    <div class="d-flex align-items-center gap-3">
+        <button class="app-brand" @onclick="GoHome" title="Inicio">
             <i class="bi bi-grid-3x3-gap-fill fs-5"></i>
-            <span>PolyConecta</span>
         </button>
+        @if (!string.IsNullOrEmpty(CurrentModule.Name))
+        {
+            <span class="o_module_name">@CurrentModule.Name</span>
+        }
+        @if (CurrentModule.Items.Count > 1)
+        {
+            <nav class="o_header_menu">
+                @foreach (var item in CurrentModule.Items)
+                {
+                    <a href="@item.Route" class="@(IsActive(item.Route) ? "active" : "")">@item.Label</a>
+                }
+            </nav>
+        }
     </div>
 
     <div class="d-flex align-items-center gap-3">
-        <div class="spotlight-search-box position-relative" style="width: 260px;">
-            <input type="text" class="form-control form-control-sm rounded-pill border-0 ps-4" style="font-size:0.8rem;" placeholder="spotlight search" value="@ShellState.SpotlightSearchQuery" @oninput="OnSpotlightInput" />
-            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" style="font-size:0.8rem;"></i>
-        </div>
-
-        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 30px; height: 30px; font-size: 0.85rem; background: rgba(255,255,255,0.2); color: white;">
-            A
+        <i class="bi bi-bell fs-5" style="cursor:pointer; opacity:0.9;" title="Notificaciones"></i>
+        <div class="d-flex align-items-center gap-2">
+            <span class="small">Alejandro Porras</span>
+            <i class="bi bi-person-circle fs-4"></i>
         </div>
     </div>
 </header>
 
 @code {
+    private record ModuleInfo(string Name, List<(string Label, string Route)> Items);
+
+    private static readonly List<(string Prefix, ModuleInfo Info)> ModuleMap = new()
+    {
+        ("/pedidos", new("Ventas", new() { ("Pedidos", "/pedidos") })),
+        ("/fabricacion", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
+        ("/captura-masiva", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
+        ("/incidencias", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
+        ("/calidad", new("Calidad", new() { ("Calidad", "/calidad") })),
+        ("/traslados", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas") })),
+        ("/recepcion", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas") })),
+        ("/entregas", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas") })),
+        ("/piso", new("Planta", new() { ("Báscula", "/piso/bascula") })),
+    };
+
+    private static readonly ModuleInfo Empty = new("", new());
+
+    private ModuleInfo CurrentModule = Empty;
+
+    protected override void OnInitialized()
+    {
+        UpdateModule();
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateModule();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateModule()
+    {
+        var path = new Uri(Nav.Uri).AbsolutePath;
+        CurrentModule = ModuleMap.FirstOrDefault(m => path.StartsWith(m.Prefix, StringComparison.OrdinalIgnoreCase)).Info ?? Empty;
+    }
+
+    private bool IsActive(string route) => new Uri(Nav.Uri).AbsolutePath.StartsWith(route, StringComparison.OrdinalIgnoreCase);
+
     private void GoHome() => Nav.NavigateTo("/");
 
-    private void OnSpotlightInput(ChangeEventArgs e)
-    {
-        var val = e.Value?.ToString();
-        ShellState.SetSpotlightSearch(val);
-    }
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }

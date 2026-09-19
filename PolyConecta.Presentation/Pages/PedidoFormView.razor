@@ -4,7 +4,12 @@
 @implements IDisposable
 
 <div class="o_control_panel">
-    <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Ventas"), new("Pedidos", "/pedidos"), new(Folio) })" />
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: los pedidos nacen de la sincronización con CONTPAQi">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo
+        </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Pedidos", "/pedidos"), new(Folio) })" />
+    </div>
     <div class="o_button_box">
         <OdooSmartButtons Buttons="@SmartButtons" OnSmartNavigate="@((route) => NavManager.NavigateTo(route))" />
     </div>
@@ -20,32 +25,19 @@
                     {
                         case "Borrador":
                             <button class="btn btn-primary btn-sm fw-bold px-3" @onclick='() => Flow.SetOrderStage("Confirmado")'>
-                                <i class="bi bi-check-circle me-1"></i> Confirmar (Atención a Clientes)
+                                <i class="bi bi-check-circle me-1"></i> Confirmar
                             </button>
                             break;
                         case "Confirmado":
-                            <button class="btn btn-sm @(Flow.SalesApproved ? "btn-success" : "btn-outline-primary") px-3" disabled="@(Flow.SalesApproved ? "disabled" : null)" @onclick="() => Flow.SetSalesApproved(true)">
-                                <i class="bi @(Flow.SalesApproved ? "bi-check-lg" : "bi-pencil-square") me-1"></i>
-                                @(Flow.SalesApproved ? "Ventas Aprobado ✓" : "Validar (Ventas)")
+                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.AutorizarManufactura()">
+                                <i class="bi bi-check-circle me-1"></i> Autorizar Manufactura
                             </button>
-                            <button class="btn btn-sm @(Flow.CreditApproved ? "btn-success" : "btn-outline-primary") px-3" disabled="@(Flow.CreditApproved ? "disabled" : null)" @onclick="() => Flow.SetCreditApproved(true)">
-                                <i class="bi @(Flow.CreditApproved ? "bi-check-lg" : "bi-credit-card") me-1"></i>
-                                @(Flow.CreditApproved ? "Crédito Aprobado ✓" : "Validar (Crédito)")
-                            </button>
-                            break;
-                        case "Autorizado":
-                            <span class="badge badge-brand px-3 py-2 fs-6"><i class="bi bi-shield-check me-1"></i> Orden Autorizada para Producción</span>
-                            break;
-                        case "En progreso":
-                            <span class="badge bg-info text-dark px-3 py-2 fs-6"><i class="bi bi-gear-wide-connected me-1"></i> En Ejecución de Planta</span>
-                            break;
-                        case "Hecho":
-                            <span class="badge text-white px-3 py-2 fs-6" style="background-color:#6B21A8;"><i class="bi bi-trophy-fill me-1"></i> Pedido Hecho & Entregado</span>
                             break;
                     }
-                    <button class="btn btn-outline-secondary btn-sm px-2" @onclick="() => Flow.ResetAll()" title="Reiniciar demo">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </button>
+                    @if (Flow.CurrentOrderStage != "Hecho")
+                    {
+                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/pedidos")'>Cancelar</button>
+                    }
                 </div>
 
                 <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.CurrentOrderStage" />
@@ -60,19 +52,19 @@
 </div>
 
 @code {
-    [Parameter] public string Folio { get; set; } = "IV214-26";
+    [Parameter] public string Folio { get; set; } = OperationalFlowState.PedidoFolio;
 
     private static readonly List<string> Stages = new() { "Borrador", "Confirmado", "Autorizado", "En progreso", "Hecho" };
 
     private List<OdooSmartButtons.SmartButtonModel> SmartButtons => new()
     {
-        new() { Label = "Manufactura", CountBadge = 1, IconClass = "bi bi-gear-wide-connected", TargetRoute = "/manufactura" },
-        new() { Label = "Entregas", CountBadge = 0, IconClass = "bi bi-truck", TargetRoute = "/logistica" }
+        new() { Label = "Entrega", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = "/entregas/18294" },
+        new() { Label = "Fabricación", CountBadge = 1, IconClass = "bi bi-diagram-3", TargetRoute = "/fabricacion/BOL-2026-0001" }
     };
 
     private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
     {
-        new() { Author = "Sistema", Timestamp = "hoy", Text = "Pedido sincronizado desde CONTPAQi vía Campos de Usuario." }
+        new() { Timestamp = "17 Sep 26", Text = "Creación del pedido por Alejandro" }
     };
 
     protected override void OnInitialized() => Flow.OnChange += StateHasChanged;

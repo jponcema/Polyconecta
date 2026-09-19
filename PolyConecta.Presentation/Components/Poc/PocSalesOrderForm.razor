@@ -1,80 +1,76 @@
+@inject OperationalFlowState Flow
 <div>
-    <div class="d-flex align-items-start justify-content-between mb-3">
-        <h3 class="fw-bold mb-0">Pedido de Venta CONTPAQi #PED-2026-IV214</h3>
-        <span class="badge badge-brand"><i class="bi bi-database me-1"></i> Sincronizado vía SDK (Maestro y Detalle CONTPAQi)</span>
-    </div>
+    <h3 class="fw-bold mb-1">Pedido</h3>
+    <h4 class="fw-bold text-primary mb-3">@OperationalFlowState.PedidoFolio</h4>
 
     <div class="row g-4 mb-4">
         <div class="col-md-6">
             <div class="o_form_label_row">
-                <span class="o_form_label">Cliente Comercial</span>
-                <span class="o_form_value fw-semibold">OWENS AMERICA</span>
+                <span class="o_form_label">Cliente</span>
+                <span class="o_form_value fw-semibold">
+                    EMPRESA MEXICANA DE MANUFACTURA
+                    <span class="d-block small text-muted fw-normal">Av. Pedro Ramirez Vazquez # 200-13 Piso 5</span>
+                    <span class="d-block small text-muted fw-normal">Col. Valle Oriente, San Pedro Garza Garcia, N.L. C.P. 66269</span>
+                    <span class="d-block small text-muted fw-normal">RFC: EMM 750712 7Z2</span>
+                </span>
             </div>
             <div class="o_form_label_row">
-                <span class="o_form_label">RFC Cliente</span>
-                <span class="o_form_value">VAM140630FL1</span>
-            </div>
-            <div class="o_form_label_row">
-                <span class="o_form_label">Código SKU PT (CONTPAQi)</span>
-                <span class="o_form_value">PT-OWENS-TE6048-01</span>
+                <span class="o_form_label">Agente</span>
+                <span class="o_form_value">@Flow.Agente</span>
             </div>
         </div>
         <div class="col-md-6">
             <div class="o_form_label_row">
-                <span class="o_form_label">Fecha Promesa</span>
-                <span class="o_form_value">20/09/2026</span>
+                <span class="o_form_label">Fecha</span>
+                <span class="o_form_value">27/04/2026</span>
             </div>
             <div class="o_form_label_row">
-                <span class="o_form_label">Ruta Logística</span>
-                <span class="o_form_value">PIM &rarr; Cliente Directo</span>
+                <span class="o_form_label">Fecha Est. Entrega</span>
+                <span class="o_form_value">05/05/2026</span>
             </div>
             <div class="o_form_label_row">
-                <span class="o_form_label">Domicilio Entrega</span>
-                <span class="o_form_value">Magallanes Oriente 517-38, Col. Treviño, Monterrey, N.L.</span>
+                <span class="o_form_label">Orden de Compra</span>
+                <span class="o_form_value">@Flow.OrdenCompraCliente</span>
+            </div>
+            <div class="o_form_label_row">
+                <span class="o_form_label">Contpaq ID</span>
+                <span class="o_form_value">@Flow.ContpaqId</span>
             </div>
         </div>
     </div>
 
     <ul class="nav nav-tabs mb-3" role="tablist">
-        <li class="nav-item">
-            <button class="nav-link @(ActiveTab == "lines" ? "active" : "")" @onclick='() => ActiveTab = "lines"'>
-                Líneas del Pedido
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link @(ActiveTab == "other" ? "active" : "")" @onclick='() => ActiveTab = "other"'>
-                Ficha Técnica (Rollo + PT)
-            </button>
-        </li>
+        <li class="nav-item"><button class="nav-link active">Detalle</button></li>
     </ul>
-
-    @if (ActiveTab == "lines")
-    {
+    <div class="mb-4">
         <table class="table align-middle mb-0">
             <thead>
                 <tr class="text-muted small">
-                    <th style="width: 20px;"></th>
+                    <th>Clave</th>
                     <th>Producto</th>
-                    <th>Descripción (CONTPAQi)</th>
                     <th class="text-end" style="width: 100px;">Cantidad</th>
                     <th style="width: 90px;">Unidad</th>
-                    <th class="text-end" style="width: 100px;">Valor Unit.</th>
-                    <th class="text-end" style="width: 110px;">Importe</th>
+                    <th class="text-end" style="width: 140px;">Precio Unitario</th>
+                    <th class="text-end" style="width: 110px;">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td class="text-muted"><i class="bi bi-grip-vertical"></i></td>
-                    <td class="fw-semibold text-primary">PT-OWENS-TE6048-01</td>
-                    <td class="small text-muted">BOLSA TERMOENCOGIBLE 60X48</td>
+                    <td class="fw-semibold text-primary">PT1113 C567</td>
+                    <td class="small">
+                        BOLSA MEDIANA 44X84 C.430 BOL-004 [77]
+                        <button class="btn btn-sm btn-link p-0 ms-1" title="Ficha técnica" @onclick="() => ShowFichaTecnica = true">
+                            <i class="bi bi-file-text"></i>
+                        </button>
+                    </td>
                     <td class="text-end">
-                        <input type="number" class="form-control form-control-sm text-end d-inline-block" style="width: 90px;" @bind="RequestedQty" />
+                        <input type="number" class="form-control form-control-sm text-end d-inline-block o_inline_input" style="width: 90px;" @bind="RequestedQty" />
                     </td>
                     <td>
-                        <select class="form-select form-select-sm" @bind="RequestedUom">
+                        <select class="form-select form-select-sm o_inline_input" @bind="RequestedUom">
+                            <option value="PZA">PZA</option>
                             <option value="KG">KG</option>
                             <option value="MIL">MIL</option>
-                            <option value="PZA">PZA</option>
                         </select>
                     </td>
                     <td class="text-end text-muted">$@UnitPrice.ToString("N2")</td>
@@ -82,82 +78,103 @@
                 </tr>
             </tbody>
         </table>
-        <p class="small text-muted mt-2 mb-0">
-            <i class="bi bi-info-circle me-1"></i>
-            Descripción, Valor Unit. e Importe vienen de CONTPAQi (solo lectura) — la unidad de venta es configurable por producto
-            (hoy KG, como en el CFDI real de referencia; podría ser MIL o PZA para otro producto).
-        </p>
-        <button class="btn btn-link btn-sm text-decoration-none ps-0 mt-2" disabled title="Esta demo mantiene un único producto por pedido">
-            <i class="bi bi-plus-lg me-1"></i>Agregar línea
-        </button>
-    }
-    else
-    {
-        <p class="small text-muted mb-3">
-            <i class="bi bi-info-circle me-1"></i>
-            Estos campos <strong>no viven en CONTPAQi</strong> (ni en el Pedido ni en el Producto — no hay campos de usuario suficientes) —
-            viven en PolyConecta, ligados al producto de CONTPAQi solo por su código. El No. de Parte del cliente
-            (<code>@CustomerPartNumber</code>) hoy se concatena a mano dentro de la Descripción libre de CONTPAQi; aquí vive como su propio campo.
-        </p>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <h6 class="text-uppercase text-muted small fw-bold mb-2"><i class="bi bi-disc me-1"></i>Rollo</h6>
-                <div class="o_form_label_row"><span class="o_form_label">Tipo de Material</span><span class="o_form_value">@MaterialType</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Tipo / Medida del Rollo</span><span class="o_form_value">@RollTypeDescriptor</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Calibre</span><span class="o_form_value">@GaugeMicron micras</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Kg por Rollo</span><span class="o_form_value">@KgPerRoll kg</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Tratado</span><span class="o_form_value">@Treatment</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Pigmento</span><span class="o_form_value">@Pigment</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Aditivo</span><span class="o_form_value">@Additive</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Perforación</span><span class="o_form_value">@(HasPerforation ? "Sí (venteo termoencogible)" : "No")</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Impresión</span><span class="o_form_value">@(HasPreliminaryPrint ? "Sí" : "No")</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Kg por Fabricar (meta)</span><span class="o_form_value fw-semibold">@TargetProductionKg kg <span class="text-muted fw-normal">— de esta orden</span></span></div>
-                <div class="o_form_label_row"><span class="o_form_label">% Tolerancia (arriba)</span><span class="o_form_value fw-semibold">@TolerancePercent% <span class="text-muted fw-normal">— de esta orden</span></span></div>
-            </div>
-            <div class="col-md-6">
-                <h6 class="text-uppercase text-muted small fw-bold mb-2"><i class="bi bi-scissors me-1"></i>PT <span class="text-muted fw-normal" style="text-transform: none;">(mismo rollo o segundo proceso)</span></h6>
-                <div class="o_form_label_row"><span class="o_form_label">Código Sistema</span><span class="o_form_value text-muted">PT-OWENS-TE6048-01 <span class="small">(ver arriba)</span></span></div>
-                <div class="o_form_label_row"><span class="o_form_label">No. Parte (Cliente)</span><span class="o_form_value">@CustomerPartNumber</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Medida</span><span class="o_form_value">@FinishedDimensions</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Tintas</span><span class="o_form_value">@Inks</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Pantones</span><span class="o_form_value">@Pantones</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Suaje</span><span class="o_form_value">@Suaje</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Empaque</span><span class="o_form_value">@Packaging</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Millares/Kg Solicitados</span><span class="o_form_value text-muted">@RequestedQty @RequestedUom <span class="small">(ver Líneas del Pedido)</span></span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Kg por Millar</span><span class="o_form_value fw-semibold text-success">@KgPerThousand</span></div>
-                <div class="o_form_label_row"><span class="o_form_label">Tipo de Sello</span><span class="o_form_value">@SealingType</span></div>
+        <div class="row">
+            <div class="col-md-8"></div>
+            <div class="col-md-4">
+                <div class="o_form_label_row"><span class="o_form_label">Subtotal</span><span class="o_form_value">$@Subtotal.ToString("N2")</span></div>
+                <div class="o_form_label_row"><span class="o_form_label">IVA</span><span class="o_form_value">$@Iva.ToString("N2")</span></div>
+                <div class="o_form_label_row"><span class="o_form_label fw-bold">Total</span><span class="o_form_value fw-bold">$@Total.ToString("N2")</span></div>
             </div>
         </div>
-    }
+    </div>
+
+    <h6 class="text-uppercase text-muted small fw-bold mb-2">Procesos Requeridos</h6>
+    <div class="o_section_card">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="text-muted small"><tr><th style="width:40px;"></th><th>Proceso</th><th>Origen</th><th>Producto</th></tr></thead>
+            <tbody>
+                @foreach (var proc in Flow.Procesos)
+                {
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input" checked="@proc.Activo" disabled /></td>
+                        <td class="fw-semibold">@ProcesoLabel(proc.Proceso)</td>
+                        <td class="small">@proc.Origen</td>
+                        <td class="small">@proc.Producto</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
-@code {
-    [Parameter] public decimal RequestedQty { get; set; } = 1470.0m;
-    [Parameter] public string RequestedUom { get; set; } = "KG";
-    [Parameter] public decimal UnitPrice { get; set; } = 52.50m;
+@if (ShowFichaTecnica)
+{
+    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.35); z-index: 1050;" @onclick="() => ShowFichaTecnica = false">
+        <div class="bg-white rounded shadow-lg p-4" style="width: 820px;" @onclick:stopPropagation="true">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Especificaciones de producción</h5>
+                <button class="btn btn-sm btn-light" @onclick="() => ShowFichaTecnica = false"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="o_form_label_row"><span class="o_form_label">Tipo Material</span><input class="form-control form-control-sm o_inline_input" @bind="MaterialType" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">Media de Rollo</span><input class="form-control form-control-sm o_inline_input" @bind="RollTypeDescriptor" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">Calibre</span><input class="form-control form-control-sm o_inline_input" @bind="GaugeMicron" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">KG/Rollo</span><input class="form-control form-control-sm o_inline_input" @bind="KgPerRoll" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">Tratado</span><input class="form-control form-control-sm o_inline_input" @bind="Treatment" /></div>
+                </div>
+                <div class="col-md-6">
+                    <div class="o_form_label_row"><span class="o_form_label">Pigmento</span><input class="form-control form-control-sm o_inline_input" @bind="Pigment" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">Aditivo</span><input class="form-control form-control-sm o_inline_input" @bind="Additive" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">Perforación</span><input class="form-control form-control-sm o_inline_input" @bind="Perforacion" /></div>
+                    <div class="o_form_label_row"><span class="o_form_label">Impresión</span><input class="form-control form-control-sm o_inline_input" @bind="Impresion" /></div>
+                    <div class="o_form_label_row">
+                        <span class="o_form_label">Kg Por fabricar</span>
+                        <div class="d-flex align-items-center gap-2 flex-grow-1">
+                            <input class="form-control form-control-sm o_inline_input" @bind="TargetProductionKgDesde" />
+                            <span class="text-muted small">a</span>
+                            <input class="form-control form-control-sm o_inline_input" @bind="TargetProductionKg" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button class="btn btn-outline-secondary btn-sm px-3" @onclick="() => ShowFichaTecnica = false">Cancelar</button>
+                <button class="btn btn-primary btn-sm px-3" @onclick="() => ShowFichaTecnica = false">Aceptar</button>
+            </div>
+        </div>
+    </div>
+}
 
-    // Rollo
+@code {
+    [Parameter] public decimal RequestedQty { get; set; } = 5500.0m;
+    [Parameter] public string RequestedUom { get; set; } = "PZA";
+    [Parameter] public decimal UnitPrice { get; set; } = 5.70m;
+
     [Parameter] public string MaterialType { get; set; } = "Polietileno Baja Densidad (LDPE Termoencogible)";
-    [Parameter] public string RollTypeDescriptor { get; set; } = "Tubular 610mm";
+    [Parameter] public string RollTypeDescriptor { get; set; } = "Tubular 20.5 x 370";
     [Parameter] public decimal GaugeMicron { get; set; } = 60.0m;
-    [Parameter] public decimal KgPerRoll { get; set; } = 30.0m;
+    [Parameter] public decimal KgPerRoll { get; set; } = 100.0m;
     [Parameter] public string Treatment { get; set; } = "Sin tratamiento corona";
     [Parameter] public string Pigment { get; set; } = "Natural (sin pigmentar)";
     [Parameter] public string Additive { get; set; } = "Antibloqueo";
-    [Parameter] public bool HasPerforation { get; set; } = true;
-    [Parameter] public bool HasPreliminaryPrint { get; set; } = false;
-    [Parameter] public decimal TargetProductionKg { get; set; } = 1470.0m;
-    [Parameter] public decimal TolerancePercent { get; set; } = 2.0m;
+    [Parameter] public string Perforacion { get; set; } = "No";
+    [Parameter] public string Impresion { get; set; } = "Sí";
+    [Parameter] public decimal TargetProductionKg { get; set; } = 500.0m;
+    [Parameter] public decimal TargetProductionKgDesde { get; set; } = 490.0m;
 
-    // PT
-    [Parameter] public string CustomerPartNumber { get; set; } = "50458038";
-    [Parameter] public string FinishedDimensions { get; set; } = "60 cm x 48 cm";
-    [Parameter] public string Inks { get; set; } = "Sin impresión";
-    [Parameter] public string Pantones { get; set; } = "N/A";
-    [Parameter] public string Suaje { get; set; } = "N/A (bolsa termoencogible)";
-    [Parameter] public string Packaging { get; set; } = "Rollo continuo";
-    [Parameter] public decimal KgPerThousand { get; set; } = 0m;
-    [Parameter] public string SealingType { get; set; } = "Termosellado por calor";
+    private bool ShowFichaTecnica = false;
+    private string Tab = "detalle";
 
-    private string ActiveTab = "lines";
+    private decimal Subtotal => RequestedQty * UnitPrice;
+    private decimal Iva => Subtotal * 0.16m;
+    private decimal Total => Subtotal + Iva;
+
+    private static string ProcesoLabel(string proceso) => proceso switch
+    {
+        "Extrusion" => "Extrusión",
+        "Impresion" => "Impresión",
+        "Bolseo" => "Bolseo",
+        _ => proceso
+    };
 }

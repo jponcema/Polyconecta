@@ -1,27 +1,9 @@
 @inherits LayoutComponentBase
-@implements IDisposable
-@inject UiAppShellState ShellState
 
 <div class="d-flex flex-column vh-100 overflow-hidden">
     <OdooTopbar />
 
-    <div class="d-flex flex-grow-1 overflow-hidden">
-        <OdooSidebar />
-
-        <main class="flex-grow-1 overflow-y-auto bg-light">
-            @Body
-        </main>
-    </div>
+    <main class="flex-grow-1 overflow-y-auto bg-light">
+        @Body
+    </main>
 </div>
-
-@code {
-    protected override void OnInitialized()
-    {
-        ShellState.OnStateChanged += StateHasChanged;
-    }
-
-    public void Dispose()
-    {
-        ShellState.OnStateChanged -= StateHasChanged;
-    }
-}

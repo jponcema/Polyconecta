@@ -20,7 +20,24 @@ Esta spec se ancla en la Constitución del Proyecto v1.4.0 — en particular los
 
 ---
 
-## User Scenarios & Testing
+## Nota de validación posterior — revisión 4 (transcripción de reunión + mockups reales, 2026-09-18/19)
+
+Se revisaron la transcripción de la reunión Polyempaques/AI Consultores del 18-sep-2026 (`docs/references/notes/Notas de reunion - Descripcion de flujos.pdf`) y 19 mockups reales (`docs/mockups/`). Esto **supersede la jerarquía tripartita `OM`/`OF`/`WO` de la User Story 1 y FR-003 más abajo** — se conserva esa sección como registro histórico de la primera hipótesis, no como el diseño vigente. Cambios confirmados (decisión del usuario, todas con la opción recomendada):
+
+1. **`ManufacturingOrder` y `ProcessOrder` se fusionan en un solo tipo autoreferenciado** (`ManufacturingOrder` con `OriginOrderId` nullable FK a sí misma). Los mockups muestran que la OM (ej. `BOL/2026/0001`) y cada OF secundaria (`IMP/2026/0001`, `EXT/2026/0001`) usan **exactamente el mismo formulario y pestañas** (Componentes/Subproductos/Producción/Planeación); solo cambian los smart buttons: la orden sin `OriginOrderId` (la "maestra") enlaza a `Pedido`, las demás enlazan a su "Orden de Fabricación Origen". La cadena real observada: `Pedido → OF-BOL (maestra, sin origen) → OF-IMP (origen=BOL) → OF-EXT (origen=IMP)` — el proceso que se entrega al cliente es la raíz, no necesariamente "Bolseo" fijo.
+2. **`WorkOrder` deja de ser una entidad independiente.** La "Planeación" es una tabla de líneas (`PlanningLine`: centro de trabajo, cantidad, unidad, fecha inicio, fecha fin, operador) embebida directamente en `ManufacturingOrder` — los mockups muestran una misma OF dividida en 2 filas (2 centros de trabajo/días distintos, ej. `COEXT-001`/`COEXT-002`), no un documento `WO` aparte.
+3. **`Bom`/`BomLine` se simplifica**: ya no hay capas/tolvas A-B-C con porcentaje. Es una lista plana editable de líneas (`Clave`, `Producto`, `Cantidad`, `Unidad`), cada una eliminable — coincide con la evidencia de sustitución de materia prima descrita en la transcripción (el Planner borra/agrega líneas libremente antes del cierre).
+4. **Nueva entidad `SubProductLine`** (pestaña "Subproductos"): cada `ManufacturingOrder` declara qué producto(s) de scrap resultan de su proceso — no es un texto libre ni un `ScrapReasonCode` genérico, es un producto CONTPAQi propio por tipo de proceso, con `Cantidad`, `Unidad`, `Producido` (bool) y `AlmacenDestino` explícito.
+5. **`QualityCheck` pasa a ser un documento propio (`QualityControl`)**, no un registro inline por slot: folio propio (`QC/2026/000X`), referencia a la `ManufacturingOrder`, `Auditor`, `Proceso`, estado (`Planeado/Aprobado/Parcial/Rechazado`), y una tabla `Controles` (Producto/Lote/Cantidad Planeada/Cantidad Real/Aprueba-Falla) — con acciones globales `Aprueba`/`Falla` a nivel de todo el documento además de por línea.
+6. **Nomenclatura de lote corregida**: `R{secuencial de 3 dígitos}-{Folio del Pedido}` (ej. `R001-IV310-26`) — NO el ID interno de CONTPAQi ni un prefijo por proceso; era inconsistente en los propios mockups (4 variantes distintas) y el usuario confirmó este formato como el correcto.
+7. **`StockPicking` se redefine en 3 conceptos**: `Traslado` (interplanta, paso 1 — salida de origen) y `Recepcion` (interplanta, paso 2 — confirmación de destino por lote, puede ser parcial: columnas `Demanda` vs `Cantidad Entregada`) siguen siendo las 2 mitades de la misma operación de 2 pasos ya validada; `Entrega` (cliente externo) es un documento independiente de un solo paso que dispara la Remisión en CONTPAQi. Ambos tipos comparten acciones `Comprobar disponibilidad` / `Validar` / `Cancelar`, y el traslado/recepción interplanta añade `Imprimir`. Estados: `Borrador → En espera de operación → En espera → Listo → Hecho` (traslado/recepción, 5 estados) vs. `Borrador → En espera → Listo → Hecho` (entrega, 4 estados).
+8. **Nueva entidad `Incidencia`** (paro de máquina): `Fecha`, `CentroTrabajo`, `TipoIncidencia` (de un catálogo), `Comentarios`, `HoraInicio`, `HoraFin` — captura global, no ligada a una `ManufacturingOrder` específica.
+9. **`SalesOrder` necesita más campos**: `OrdenCompraCliente` (PO del cliente), `Agente` (vendedor/AC), `ErpDocumentId` ya existía pero ahora es explícitamente de solo lectura ("Contpaq ID"). Cada checkbox de proceso (Extrusión/Impresión/Bolseo) en `SalesOrderLine` lleva su propio `Plant` (Origen) y su propio `ProductId` — no un checkbox genérico.
+10. **Riesgo técnico identificado, no resuelto** (Sergio Martínez, transcripción ~00:53:23): la Remisión que dispara `Entrega` debe quedar enlazada al Pedido de origen en CONTPAQi vía SDK — si el SDK no soporta mandar ese folio al crear la remisión, el Pedido en CONTPAQi queda "pendiente de surtir" indefinidamente. Pendiente de verificación técnica contra el SDK real (Principio VII), no es un problema de modelo de datos.
+
+---
+
+### ⚠️ Sección superada — se conserva como registro histórico, no como diseño vigente
 
 ### User Story 1 - Jerarquía tripartita real de manufactura (Priority: P1)
 

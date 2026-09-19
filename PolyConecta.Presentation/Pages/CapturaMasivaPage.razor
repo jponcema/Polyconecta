@@ -1,0 +1,78 @@
+@page "/captura-masiva"
+@inject OperationalFlowState Flow
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="o_control_panel">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-outline-secondary btn-sm" disabled title="Fuera de alcance de esta demo"><i class="bi bi-upload me-1"></i> Subir Excel</button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Captura Masiva de Producción") })" />
+    </div>
+    <OdooSearchBox @bind-Value="searchText" />
+    <div class="d-flex align-items-center gap-2">
+        <div class="btn-group btn-group-sm o_view_switcher">
+            <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="p-4">
+    <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle bg-white shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
+                    <th>Orden de fabricación</th><th>Producto</th><th>Estado</th><th>Pedido</th>
+                    <th class="text-end">Cantidad</th><th>Unidad</th><th class="text-end">Producido</th>
+                    @for (int i = 1; i <= MaxRollos; i++) { <th class="text-end">R@i</th> }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var of in FilteredOrders)
+                {
+                    <tr style="cursor:pointer;" class="@(selected.Contains(of.Folio) ? "table-active" : "")" @onclick='() => NavManager.NavigateTo($"/fabricacion/{of.Folio}")'>
+                        <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected.Contains(of.Folio)" @onchange="() => ToggleOne(of.Folio)" /></td>
+                        <td class="fw-semibold text-primary small">@of.Folio</td>
+                        <td class="small">@of.Producto</td>
+                        <td class="small">@of.State</td>
+                        <td class="small">@OperationalFlowState.PedidoFolio</td>
+                        <td class="text-end small">@of.Cantidad.ToString("N0")</td>
+                        <td class="small">@of.Unidad</td>
+                        <td class="text-end small fw-bold">@of.ProducidoTotal.ToString("N0")</td>
+                        @for (int i = 0; i < MaxRollos; i++)
+                        {
+                            <td class="text-end small">@(i < of.Produccion.Count ? of.Produccion[i].Real.ToString("N0") : "")</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <OdooPager Count="@FilteredOrders.Count" />
+</div>
+
+@code {
+    private string searchText = "";
+    private readonly HashSet<string> selected = new();
+    private int MaxRollos => Flow.ManufacturingOrders.Count == 0 ? 0 : Flow.ManufacturingOrders.Max(o => o.Produccion.Count);
+
+    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders.Where(o =>
+        string.IsNullOrWhiteSpace(searchText)
+        || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void ToggleOne(string folio)
+    {
+        if (!selected.Remove(folio)) selected.Add(folio);
+    }
+
+    private void ToggleAll(ChangeEventArgs e)
+    {
+        var check = e.Value is bool b && b;
+        selected.Clear();
+        if (check) foreach (var of in FilteredOrders) selected.Add(of.Folio);
+    }
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+}

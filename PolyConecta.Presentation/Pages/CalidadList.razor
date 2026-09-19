@@ -1,0 +1,84 @@
+@page "/calidad"
+@inject OperationalFlowState Flow
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="o_control_panel">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: las fichas de Calidad nacen de la Orden de Fabricación">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo
+        </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Control de Calidad") })" />
+    </div>
+    <OdooSearchBox @bind-Value="searchText" />
+    <div class="d-flex align-items-center gap-2">
+        <div class="btn-group btn-group-sm o_view_switcher">
+            <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="p-4">
+    <table class="table table-hover align-middle bg-white shadow-sm">
+        <thead class="table-light">
+            <tr>
+                <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
+                <th>Folio</th>
+                <th>Producto</th>
+                <th>Orden de Fabricación</th>
+                <th>Proceso</th>
+                <th class="text-end">Lotes</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var of in FilteredOrders)
+            {
+                <tr style="cursor:pointer;" class="@(selected.Contains(of.Folio) ? "table-active" : "")" @onclick='() => NavManager.NavigateTo($"/calidad/{of.Folio}")'>
+                    <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected.Contains(of.Folio)" @onchange="() => ToggleOne(of.Folio)" /></td>
+                    <td class="fw-semibold text-primary">@QcFolio(of)</td>
+                    <td>@of.Producto</td>
+                    <td>@of.Folio</td>
+                    <td>@of.ProcessLabel</td>
+                    <td class="text-end">@of.Produccion.Count</td>
+                    <td><span class="badge badge-brand">@EstadoQc(of)</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <OdooPager Count="@FilteredOrders.Count" />
+</div>
+
+@code {
+    private string searchText = "";
+    private readonly HashSet<string> selected = new();
+    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders.Where(o => o.CalidadRequerida
+        && (string.IsNullOrWhiteSpace(searchText)
+            || QcFolio(o).Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase))).ToList();
+
+    private void ToggleOne(string folio)
+    {
+        if (!selected.Remove(folio)) selected.Add(folio);
+    }
+
+    private void ToggleAll(ChangeEventArgs e)
+    {
+        var check = e.Value is bool b && b;
+        selected.Clear();
+        if (check) foreach (var of in FilteredOrders) selected.Add(of.Folio);
+    }
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+
+    private static string QcFolio(ManufacturingOrder of) => "QC-" + of.Folio.Replace("/", "-");
+
+    private static string EstadoQc(ManufacturingOrder of)
+    {
+        if (of.Produccion.Count == 0) return "Planeado";
+        if (of.Produccion.Any(l => l.Estado == "En revisión")) return "Parcial";
+        return of.Produccion.Any(l => l.Estado == "Rechazado") ? "Parcial" : "Aprobado";
+    }
+}

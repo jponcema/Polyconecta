@@ -2,24 +2,24 @@
    retirado) y nunca se aplicaba a los componentes Razor reales. Tokens tomados de ese mismo mock. */
 
 :root {
-    --brand-primary: #714B67;
-    --brand-primary-hover: #5D3D55;
+    --brand-primary: #2E3889;
+    --brand-primary-hover: #232C6B;
     --brand-secondary: #017E84;
-    --brand-light: #F4EFF3;
+    --brand-light: #EEF0FA;
     --app-bg: #F3F4F6;
     --border-color: #E5E7EB;
     --text-main: #1F2937;
     --text-muted: #6B7280;
-    --topbar-bg: #714B67;
+    --topbar-bg: #2E3889;
     --control-bg: #FFFFFF;
     --sheet-bg: #FFFFFF;
 
     /* Re-tematiza los tokens de Bootstrap 5.3 para que btn-primary/text-primary/bg-primary
-       usen el morado de marca en vez del azul por defecto de Bootstrap. */
+       usen el azul institucional en vez del azul por defecto de Bootstrap. */
     --bs-primary: var(--brand-primary);
-    --bs-primary-rgb: 113, 75, 103;
+    --bs-primary-rgb: 46, 56, 137;
     --bs-link-color: var(--brand-primary);
-    --bs-link-color-rgb: 113, 75, 103;
+    --bs-link-color-rgb: 46, 56, 137;
     --bs-link-hover-color: var(--brand-primary-hover);
 }
 
@@ -38,7 +38,7 @@ body {
     --bs-btn-active-border-color: var(--brand-primary-hover);
     --bs-btn-disabled-bg: var(--brand-primary);
     --bs-btn-disabled-border-color: var(--brand-primary);
-    --bs-btn-focus-shadow-rgb: 113, 75, 103;
+    --bs-btn-focus-shadow-rgb: 46, 56, 137;
 }
 
 .btn-outline-primary {
@@ -48,10 +48,10 @@ body {
     --bs-btn-hover-border-color: var(--brand-primary);
     --bs-btn-active-bg: var(--brand-primary);
     --bs-btn-active-border-color: var(--brand-primary);
-    --bs-btn-focus-shadow-rgb: 113, 75, 103;
+    --bs-btn-focus-shadow-rgb: 46, 56, 137;
 }
 
-/* --- Top Navbar estilo Odoo Enterprise (morado de marca) --- */
+/* --- Top Navbar (azul institucional de marca) --- */
 .o_main_navbar {
     background-color: var(--topbar-bg);
     color: white;
@@ -74,16 +74,57 @@ body {
     gap: 0.6rem;
 }
 
-/* --- Control panel / breadcrumbs / status pipeline (statusbar) --- */
-.o_control_panel {
-    background-color: var(--control-bg);
-    border-bottom: 1px solid var(--border-color);
-    padding: 0.6rem 1.25rem;
+.o_main_navbar .o_module_name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: white;
+    opacity: 0.95;
+}
+
+.o_main_navbar .o_header_menu {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
-    flex-wrap: wrap;
+    height: 46px;
+}
+.o_main_navbar .o_header_menu a {
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+}
+.o_main_navbar .o_header_menu a.active {
+    color: white;
+    font-weight: 700;
+    border-bottom-color: white;
+}
+
+.o_main_navbar .o_company_name {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: white;
+    opacity: 0.85;
+}
+
+/* --- Control panel / breadcrumbs / status pipeline (statusbar) ---
+   Grid de 3 columnas: lo que exista (breadcrumb/Nuevo, buscador, etc.) se auto-coloca en
+   orden de aparición, dejando la columna central siempre centrada y con espacio propio
+   (nunca se recorta ni se sobrepone a la franja). Fijo (sticky) bajo el navbar principal. */
+.o_control_panel {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: var(--control-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: 1rem;
 }
 
 .o_breadcrumb {
@@ -252,8 +293,9 @@ body {
 
 /* --- Smart Buttons (parte superior de la hoja de documento) --- */
 .o_button_box {
+    grid-column: 2;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 6px;
     flex-wrap: wrap;
 }
@@ -261,18 +303,21 @@ body {
 .o_smart_button {
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 0.2rem 0.5rem;
+    padding: 0.3rem 0.6rem;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: center;
+    gap: 0.15rem;
     cursor: pointer;
     color: var(--text-main);
     background: transparent;
     transition: all 0.15s ease;
+    text-align: center;
 }
 
 .o_smart_button i {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--brand-primary);
 }
 
@@ -280,18 +325,19 @@ body {
     background-color: var(--brand-light);
 }
 
-.o_smart_button .stat-count {
-    font-weight: 700;
-    font-size: 0.8rem;
+.o_smart_button .stat-label {
+    font-size: 0.72rem;
+    font-weight: 500;
     color: var(--text-main);
-    line-height: 1.2;
+    line-height: 1;
+    white-space: nowrap;
 }
 
-.o_smart_button .stat-label {
-    font-size: 0.68rem;
-    font-weight: 400;
+.o_smart_button .stat-count {
+    font-weight: 700;
+    font-size: 0.78rem;
     color: var(--text-muted);
-    line-height: 1;
+    line-height: 1.2;
 }
 
 /* --- Pares label:valor agrupados (estilo grupo de campos Odoo) --- */
@@ -315,6 +361,72 @@ body {
 }
 
 /* --- Hoja de documento (form sheet) --- */
+/* --- Barra de búsqueda (vista de lista) --- */
+.o_search_bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #F3F4F6;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    min-width: 280px;
+    color: var(--text-muted);
+}
+.o_search_bar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.85rem;
+    flex-grow: 1;
+    color: var(--text-main);
+}
+
+/* --- Paginador (vista de lista) --- */
+.o_pager {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.75rem;
+}
+.o_pager .btn {
+    padding: 0.1rem 0.4rem;
+    line-height: 1;
+}
+
+/* --- Inputs de línea de captura: translúcidos, sin caja, solo subrayado --- */
+.o_inline_input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+    box-shadow: none;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+.o_inline_input:focus {
+    background: transparent;
+    border-bottom-color: var(--brand-primary);
+    box-shadow: none;
+}
+
+/* --- Delimitación sutil de componentes tipo "card" (listas, tablas sueltas) --- */
+.table.shadow-sm {
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+/* --- Secciones sin pestañas (p.ej. Pedido) que aun así necesitan un borde propio --- */
+.o_section_card {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    background: white;
+}
+
 .o_form_sheet {
     background: white;
     border: 1px solid var(--border-color);
@@ -373,9 +485,46 @@ body {
     transform: translateY(-1px);
 }
 
-/* --- Sidebar de app (rail de navegación) --- */
-.app-sidebar .btn-text.active,
-.app-sidebar .btn-text.fw-bold {
-    background-color: var(--brand-light) !important;
-    color: var(--brand-primary) !important;
+/* --- Hub de módulos (app launcher) --- */
+.o_app_hub {
+    padding: 3rem 2rem;
+    display: flex;
+    justify-content: center;
+}
+.o_app_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 130px);
+    gap: 2rem;
+    max-width: 820px;
+}
+.o_app_tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+.o_app_tile:hover {
+    background: rgba(0,0,0,0.03);
+}
+.o_app_icon {
+    width: 88px;
+    height: 88px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2.2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.o_app_label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-dark, #2b2b33);
+    text-align: center;
 }

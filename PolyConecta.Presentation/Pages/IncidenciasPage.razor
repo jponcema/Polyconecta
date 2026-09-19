@@ -1,0 +1,57 @@
+@page "/incidencias"
+@inject OperationalFlowState Flow
+@implements IDisposable
+
+<div class="o_control_panel">
+    <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Captura de Incidencias") })" />
+</div>
+
+<div class="p-4">
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-outline-secondary btn-sm" disabled title="Fuera de alcance de esta demo"><i class="bi bi-upload me-1"></i> Subir Excel</button>
+        <input class="form-control form-control-sm" style="max-width: 260px;" placeholder="Buscar..." />
+    </div>
+
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-2"><label class="form-label small text-muted">Centro de trabajo</label><input class="form-control form-control-sm o_inline_input" @bind="centro" /></div>
+        <div class="col-md-2"><label class="form-label small text-muted">Tipo</label><input class="form-control form-control-sm o_inline_input" @bind="tipo" /></div>
+        <div class="col-md-3"><label class="form-label small text-muted">Comentarios</label><input class="form-control form-control-sm o_inline_input" @bind="comentarios" /></div>
+        <div class="col-md-1"><label class="form-label small text-muted">Inicio</label><input class="form-control form-control-sm o_inline_input" @bind="horaInicio" placeholder="19:00" /></div>
+        <div class="col-md-1"><label class="form-label small text-muted">Fin</label><input class="form-control form-control-sm o_inline_input" @bind="horaFin" placeholder="07:00" /></div>
+        <div class="col-md-3"><button class="btn btn-sm btn-outline-primary w-100" @onclick="Agregar"><i class="bi bi-plus-lg"></i> Agregar Incidencia</button></div>
+    </div>
+
+    <table class="table table-sm align-middle bg-white shadow-sm">
+        <thead class="table-light">
+            <tr><th>Fecha</th><th>Centro de trabajo</th><th>Tipo de incidencia</th><th>Comentarios</th><th>Hora Inicio</th><th>Hora Fin</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var inc in Flow.Incidencias)
+            {
+                <tr>
+                    <td class="small">@inc.Fecha.ToString("dd-MMM-yy")</td>
+                    <td class="small">@inc.CentroTrabajo</td>
+                    <td class="small">@inc.Tipo</td>
+                    <td class="small">@inc.Comentarios</td>
+                    <td class="small">@inc.HoraInicio</td>
+                    <td class="small">@inc.HoraFin</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private string centro = ""; private string tipo = ""; private string comentarios = ""; private string horaInicio = ""; private string horaFin = "";
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+
+    private void Agregar()
+    {
+        if (string.IsNullOrWhiteSpace(centro) || string.IsNullOrWhiteSpace(tipo)) return;
+        Flow.Incidencias.Add(new Incidencia { Fecha = DateTime.Today, CentroTrabajo = centro, Tipo = tipo, Comentarios = comentarios, HoraInicio = horaInicio, HoraFin = horaFin });
+        centro = ""; tipo = ""; comentarios = ""; horaInicio = ""; horaFin = "";
+        StateHasChanged();
+    }
+}

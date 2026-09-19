@@ -1,0 +1,115 @@
+@page "/traslados/{Folio}"
+@inject OperationalFlowState Flow
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="o_control_panel">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual fuera de alcance de esta demo">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo
+        </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Traslados", "/traslados"), new("#" + Folio) })" />
+    </div>
+    <div class="o_button_box">
+        <OdooSmartButtons Buttons="@SmartButtons" OnSmartNavigate="@((route) => NavManager.NavigateTo(route))" />
+    </div>
+</div>
+
+<div class="p-4">
+    <div class="d-flex gap-3 align-items-start">
+        <div class="o_form_sheet flex-grow-1">
+            <div class="o_statusbar">
+                <div class="d-flex align-items-center gap-2">
+                    @if (Flow.Traslado.State != "Hecho")
+                    {
+                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick="() => Flow.ComprobarDisponibilidadTraslado()">
+                            <i class="bi bi-search me-1"></i> Comprobar disponibilidad
+                        </button>
+                        <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.ValidarTraslado()">
+                            <i class="bi bi-check2-circle me-1"></i> Validar
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/traslados")'>Cancelar</button>
+                    }
+                    <button class="btn btn-outline-secondary btn-sm px-3"><i class="bi bi-printer me-1"></i> Imprimir</button>
+                </div>
+                <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.Traslado.State" />
+            </div>
+
+            <div class="o_sheet_body">
+                <h3 class="fw-bold mb-1">Orden de traslado</h3>
+                <h4 class="fw-bold text-primary mb-3">#@Flow.Traslado.Folio</h4>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="o_form_label_row"><span class="o_form_label">Operación</span><span class="o_form_value fw-semibold">@Flow.Traslado.Operacion</span></div>
+                        <div class="o_form_label_row"><span class="o_form_label">Origen</span><span class="o_form_value">@Flow.Traslado.Origen</span></div>
+                        <div class="o_form_label_row"><span class="o_form_label">Destino</span><span class="o_form_value">@Flow.Traslado.Destino</span></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="o_form_label_row"><span class="o_form_label">Fecha Programada</span><span class="o_form_value">@Flow.Traslado.FechaProgramada.ToString("dd MMM yy")</span></div>
+                        <div class="o_form_label_row"><span class="o_form_label">Fecha Límite</span><span class="o_form_value">@Flow.Traslado.FechaLimite.ToString("dd MMM yy")</span></div>
+                        <div class="o_form_label_row"><span class="o_form_label">Contpaq ID</span><span class="o_form_value">@(string.IsNullOrEmpty(Flow.Traslado.ContpaqId) ? "— (pendiente de recepción)" : Flow.Traslado.ContpaqId)</span></div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Flow.Traslado.Warning))
+                {
+                    <div class="alert alert-warning py-2 px-3 small mb-3"><i class="bi bi-exclamation-triangle me-1"></i>@Flow.Traslado.Warning</div>
+                }
+
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><button class="nav-link active">Operaciones</button></li>
+                </ul>
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="text-muted small"><tr><th>Clave</th><th>Producto</th><th class="text-end">Demanda</th><th class="text-end">Cant. Entregada</th><th style="width:70px;">Unidad</th><th>Lotes</th></tr></thead>
+                    <tbody>
+                        @foreach (var l in Flow.Traslado.Lineas)
+                        {
+                            <tr>
+                                <td class="small">@l.Clave</td>
+                                <td>@l.Producto</td>
+                                <td class="text-end">@l.Demanda.ToString("N1")</td>
+                                <td class="text-end">@l.Entregado.ToString("N1")</td>
+                                <td class="small">@l.Unidad</td>
+                                <td>
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none" @onclick="() => lotModalLine = l">
+                                        @(l.LotesSeleccionados.Count > 0 ? $"{l.LotesSeleccionados.Count} lote(s)" : "Seleccionar")
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <OdooChatterDrawer Messages="@chatterEntries" />
+    </div>
+</div>
+
+<LotPickerModal Show="@(lotModalLine != null)"
+                AvailableLots="@Flow.GetLotesDisponiblesTraslado()"
+                SelectedFolios="@(lotModalLine?.LotesSeleccionados ?? new())"
+                RequiredQty="@(lotModalLine?.Demanda ?? 0)"
+                Unidad="@(lotModalLine?.Unidad ?? "")"
+                OnClose="@(() => lotModalLine = null)" />
+
+@code {
+    [Parameter] public string Folio { get; set; } = "";
+
+    private ShipmentLine? lotModalLine;
+
+    private static readonly List<string> Stages = new() { "Borrador", "En espera de operación", "En espera", "Listo", "Hecho" };
+
+    private List<OdooSmartButtons.SmartButtonModel> SmartButtons => new()
+    {
+        new() { Label = "Orden de Fabricación", CountBadge = 1, IconClass = "bi bi-gear-wide-connected", TargetRoute = "/fabricacion/IMP-2026-0001" },
+        new() { Label = "Recepción", CountBadge = 1, IconClass = "bi bi-box-arrow-in-down", TargetRoute = $"/recepcion/{Flow.Recepcion.Folio}" }
+    };
+
+    private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
+    {
+        new() { Timestamp = "hoy", Text = "Traslado generado." }
+    };
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+}

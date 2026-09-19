@@ -33,7 +33,7 @@ echo "================================================================="
 echo "🚀  PolyConecta Operational Suite - Build, Test & Run"
 echo "================================================================="
 echo "Repository Root: ${REPO_ROOT}"
-echo "Odoo 19 Web SPA (Presentation) Port : ${PRESENTATION_PORT}"
+echo "PolyConecta Web Presentation Port    : ${PRESENTATION_PORT}"
 echo "Swagger & REST API (PolyConecta.Api) : ${API_PORT}"
 if [ "$WITH_BRIDGE" = true ]; then
     echo "CONTPAQi Bridge Port                : ${BRIDGE_PORT} (Activo)"
@@ -61,7 +61,7 @@ dotnet test PolyConecta.slnx --no-build --verbosity quiet
 echo "================================================================="
 echo "✅ Build & Tests Succeeded! Launching PolyConecta Solution Layers..."
 echo "================================================================="
-echo "💻 Odoo 19 Web SPA (Presentation) : http://localhost:${PRESENTATION_PORT}"
+echo "💻 PolyConecta Web Presentation   : http://localhost:${PRESENTATION_PORT}"
 echo "📚 Swagger API (PolyConecta.Api)  : http://localhost:${API_PORT}/swagger"
 echo "⚙️  REST API Endpoints Base       : http://localhost:${API_PORT}/api/v1"
 
@@ -84,7 +84,7 @@ if [ "$WITH_BRIDGE" = true ]; then
 fi
 
 echo "-----------------------------------------------------------------"
-echo "Iniciando Odoo 19 Web SPA (Presentation) en segundo plano (Puerto ${PRESENTATION_PORT})..."
+echo "Iniciando PolyConecta Web Presentation en segundo plano (Puerto ${PRESENTATION_PORT})..."
 dotnet run --project PolyConecta.Presentation/PolyConecta.Presentation.csproj --no-build --urls "http://localhost:${PRESENTATION_PORT}" &
 PIDS+=($!)
 

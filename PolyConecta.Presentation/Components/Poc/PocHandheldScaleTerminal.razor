@@ -1,153 +1,76 @@
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between">
-        <h5 class="mb-0 fw-bold">
-            <i class="bi bi-phone me-2 text-warning"></i> Terminal Handheld Móvil — Pesaje & Lotificación a Pie de Máquina (PIM)
-        </h5>
-        <span class="badge bg-warning text-dark px-3 py-2 fw-bold">
-            <i class="bi bi-qr-code-scan me-1"></i> Línea EXT-01 | Turno 1
-        </span>
+<div class="row g-4">
+    <div class="col-md-5">
+        <h6 class="fw-bold mb-3 text-slate-800"><i class="bi bi-list-check me-2 text-primary"></i>Rollos Registrados</h6>
+        <div class="list-group shadow-xs">
+            @if (Lotes.Count == 0)
+            {
+                <div class="list-group-item text-muted small fst-italic">Sin rollos capturados todavía.</div>
+            }
+            @foreach (var lote in Lotes)
+            {
+                <div class="list-group-item d-flex align-items-center justify-content-between p-3">
+                    <div>
+                        <div class="fw-bold fs-6"><code>@lote.Lote</code></div>
+                        <small class="opacity-75">@lote.Real.ToString("N2") @lote.Unidad</small>
+                    </div>
+                    <span class="badge @BadgeClass(lote)">@lote.Estado</span>
+                </div>
+            }
+        </div>
     </div>
-    <div class="card-body p-4 bg-light">
-        <div class="row g-4">
-            <!-- Columna Izquierda: Grid de Slots Precargados -->
-            <div class="col-md-5">
-                <h6 class="fw-bold mb-3 text-slate-800">
-                    <i class="bi bi-grid-3x3-gap me-2 text-primary"></i> Slots Precargados (`Rollo 1` ... `Rollo N`)
-                </h6>
-                <div class="list-group shadow-xs">
-                    @foreach (var slot in Slots)
-                    {
-                        var isSelected = SelectedSlot?.SlotNumber == slot.SlotNumber;
-                        <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 @(isSelected ? "active border-primary" : "")"
-                                @onclick="() => SelectSlot(slot)">
-                            <div>
-                                <div class="fw-bold fs-6">@slot.SlotName</div>
-                                <small class="opacity-75">Lote Proyectado: <code>@slot.LotNumber</code></small>
-                            </div>
-                            <span class="badge @slot.BadgeClass px-3 py-2">
-                                @slot.StatusText
-                            </span>
-                        </button>
-                    }
+
+    <div class="col-md-7">
+        <div class="card border p-4 bg-white shadow-xs">
+            <h6 class="fw-bold mb-3 text-slate-800 border-bottom pb-2">Captura Báscula — Nuevo Rollo</h6>
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <label class="form-label small text-muted">Peso Bruto (kg)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control form-control-lg fw-bold text-dark" @bind="GrossWeightKg" step="0.5" />
+                        <span class="input-group-text bg-light">KG</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label small text-muted">Tara Cono (kg)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control form-control-lg fw-bold text-muted" @bind="TareWeightKg" step="0.1" />
+                        <span class="input-group-text bg-light">KG</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Columna Derecha: Captura de Báscula Báscula / Pesaje -->
-            <div class="col-md-7">
-                <div class="card border p-4 bg-white shadow-xs">
-                    <h6 class="fw-bold mb-3 text-slate-800 border-bottom pb-2">
-                        Captura Báscula — @(SelectedSlot?.SlotName ?? "Selecciona un Slot")
-                    </h6>
-
-                    @if (SelectedSlot != null)
-                    {
-                        <div class="row g-3 mb-3">
-                            <div class="col-6">
-                                <label class="form-label small text-muted">Peso Bruto (kg)</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control form-control-lg fw-bold text-dark" @bind="GrossWeightKg" step="0.5" />
-                                    <span class="input-group-text bg-light">KG</span>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small text-muted">Tara Cono (kg)</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control form-control-lg fw-bold text-muted" @bind="TareWeightKg" step="0.1" />
-                                    <span class="input-group-text bg-light">KG</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-3 bg-slate-100 rounded mb-4 d-flex align-items-center justify-content-between">
-                            <div>
-                                <span class="text-muted small d-block fw-semibold">PESO NETO CALCULADO</span>
-                                <span class="fs-2 fw-black text-primary">@NetWeightKg.ToString("F2") KG</span>
-                            </div>
-                            <div class="text-end">
-                                <small class="text-muted d-block">Metraje Proyectado:</small>
-                                <strong class="fs-5 text-dark">1,250 METROS</strong>
-                            </div>
-                        </div>
-
-                        <!-- Botones de Acción / Calidad -->
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-success btn-lg flex-grow-1 fw-bold py-2" @onclick="OnSimulateQualityPass">
-                                <i class="bi bi-check-circle-fill me-2"></i> Capturar & Aprobar Calidad
-                            </button>
-                            <button class="btn btn-outline-danger btn-lg fw-bold py-2" @onclick="OnSimulateQualityFail">
-                                <i class="bi bi-x-octagon-fill me-2"></i> Rechazar (Cuarentena .S)
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-hand-index-thumb fs-1 d-block mb-2"></i>
-                            Selecciona un slot a la izquierda para capturar el pesaje de la báscula.
-                        </div>
-                    }
-                </div>
+            <div class="p-3 bg-slate-100 rounded mb-4">
+                <span class="text-muted small d-block fw-semibold">PESO NETO CALCULADO</span>
+                <span class="fs-2 fw-black text-primary">@NetWeightKg.ToString("F2") KG</span>
             </div>
+
+            <button class="btn btn-primary btn-lg w-100 fw-bold py-2" @onclick="Registrar">
+                <i class="bi bi-plus-circle-fill me-2"></i> Registrar Rollo
+            </button>
         </div>
     </div>
 </div>
 
 @code {
-    public class SlotItem
-    {
-        public int SlotNumber { get; set; }
-        public string SlotName { get; set; } = string.Empty;
-        public string LotNumber { get; set; } = string.Empty;
-        public string StatusText { get; set; } = "Pendiente";
-        public string BadgeClass { get; set; } = "bg-secondary";
-        public decimal NetWeight { get; set; } = 0.0m;
-    }
+    [Parameter] public List<ProductionLot> Lotes { get; set; } = new();
+    [Parameter] public EventCallback<(decimal Gross, decimal Tare)> OnRegistered { get; set; }
 
-    [Parameter] public List<SlotItem> Slots { get; set; } = new()
-    {
-        new SlotItem { SlotNumber = 1, SlotName = "Rollo 1 (Slot R001)", LotNumber = "IV214-26-R001", StatusText = "Pendiente", BadgeClass = "bg-secondary" },
-        new SlotItem { SlotNumber = 2, SlotName = "Rollo 2 (Slot R002)", LotNumber = "IV214-26-R002", StatusText = "Pendiente", BadgeClass = "bg-secondary" },
-        new SlotItem { SlotNumber = 3, SlotName = "Rollo 3 (Slot R003)", LotNumber = "IV214-26-R003", StatusText = "Pendiente", BadgeClass = "bg-secondary" }
-    };
-
-    private SlotItem? SelectedSlot;
-    private decimal GrossWeightKg = 155.0m;
+    private decimal GrossWeightKg;
     private decimal TareWeightKg = 5.0m;
     private decimal NetWeightKg => GrossWeightKg - TareWeightKg;
 
-    [Parameter] public EventCallback<SlotItem> OnRollWeighed { get; set; }
-
-    protected override void OnInitialized()
+    private static string BadgeClass(ProductionLot lote) => lote.Estado switch
     {
-        if (Slots.Any()) SelectedSlot = Slots[0];
-    }
+        "Aprobado" => "bg-success",
+        "Rechazado" => "bg-danger",
+        _ => "bg-secondary"
+    };
 
-    private void SelectSlot(SlotItem slot)
+    private async Task Registrar()
     {
-        SelectedSlot = slot;
-    }
-
-    private async Task OnSimulateQualityPass()
-    {
-        if (SelectedSlot == null) return;
-        SelectedSlot.StatusText = "Aprobado (PIM/Stock/PT)";
-        SelectedSlot.BadgeClass = "bg-success";
-        SelectedSlot.NetWeight = NetWeightKg;
-        if (OnRollWeighed.HasDelegate) await OnRollWeighed.InvokeAsync(SelectedSlot);
-    }
-
-    private async Task OnSimulateQualityFail()
-    {
-        if (SelectedSlot == null) return;
-        
-        // Regla Nomenclatura Cuarentena .S & Reciclaje de Slot R00X
-        var oldLot = SelectedSlot.LotNumber;
-        var quarantineLot = oldLot + ".S";
-        
-        SelectedSlot.StatusText = $"Rechazado ({quarantineLot}) → Slot Reciclado!";
-        SelectedSlot.BadgeClass = "bg-danger";
-        SelectedSlot.NetWeight = NetWeightKg;
-
-        if (OnRollWeighed.HasDelegate) await OnRollWeighed.InvokeAsync(SelectedSlot);
+        if (GrossWeightKg <= 0) return;
+        if (OnRegistered.HasDelegate) await OnRegistered.InvokeAsync((GrossWeightKg, TareWeightKg));
+        GrossWeightKg = 0;
+        TareWeightKg = 5.0m;
     }
 }

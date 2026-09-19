@@ -1,0 +1,9 @@
+<div class="o_pager">
+    <span>@(Count == 0 ? "0-0" : $"1-{Count}") / @Count</span>
+    <button class="btn btn-sm btn-light" disabled><i class="bi bi-chevron-left"></i></button>
+    <button class="btn btn-sm btn-light" disabled><i class="bi bi-chevron-right"></i></button>
+</div>
+
+@code {
+    [Parameter] public int Count { get; set; }
+}

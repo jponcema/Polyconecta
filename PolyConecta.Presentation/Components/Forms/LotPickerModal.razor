@@ -1,0 +1,98 @@
+@if (Show)
+{
+    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.35); z-index: 1050;" @onclick="() => OnClose.InvokeAsync()">
+        <div class="bg-white rounded shadow-lg p-4" style="width: 480px;" @onclick:stopPropagation="true">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Selección de Lotes</h5>
+                <button class="btn btn-sm btn-light" @onclick="() => OnClose.InvokeAsync()"><i class="bi bi-x-lg"></i></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3 small">
+                <span class="text-muted">Requerido: <span class="fw-semibold text-dark">@RequiredQty.ToString("N1") @Unidad</span></span>
+                <span class="text-muted">Seleccionado: <span class="fw-semibold @(SelectedWeight >= RequiredQty ? "text-success" : "text-dark")">@SelectedWeight.ToString("N1") @Unidad</span></span>
+                @if (SelectedWeight >= RequiredQty && RequiredQty > 0)
+                {
+                    <span class="badge bg-success">Completo</span>
+                }
+                else if (SelectedFolios.Count > 0)
+                {
+                    <span class="badge bg-warning text-dark">Parcial</span>
+                }
+            </div>
+
+            <div class="input-group input-group-sm mb-2">
+                <span class="input-group-text bg-light"><i class="bi bi-upc-scan"></i></span>
+                <input class="form-control" placeholder="Escanear o capturar folio de lote..." @bind="scanValue" @bind:event="oninput" @onkeydown="OnKeyDown" autofocus />
+            </div>
+            @if (!string.IsNullOrEmpty(errorMsg))
+            {
+                <div class="text-danger small mb-2"><i class="bi bi-exclamation-circle me-1"></i>@errorMsg</div>
+            }
+
+            <div class="border rounded" style="max-height: 260px; overflow-y: auto;">
+                @if (SelectedFolios.Count == 0)
+                {
+                    <div class="text-muted small fst-italic p-3 text-center">Sin lotes capturados todavía.</div>
+                }
+                else
+                {
+                    <table class="table table-sm align-middle mb-0">
+                        <tbody>
+                            @foreach (var folio in SelectedFolios.ToList())
+                            {
+                                var lot = AvailableLots.FirstOrDefault(l => l.Lote == folio);
+                                <tr>
+                                    <td><code>@folio</code></td>
+                                    <td class="text-end small">@(lot != null ? $"{lot.Real:N1} {lot.Unidad}" : "")</td>
+                                    <td style="width:30px;"><button class="btn btn-sm btn-link text-danger p-0" @onclick="() => Remove(folio)"><i class="bi bi-x-circle-fill"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <button class="btn btn-primary btn-sm px-3" @onclick="() => OnClose.InvokeAsync()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public List<ProductionLot> AvailableLots { get; set; } = new();
+    [Parameter] public List<string> SelectedFolios { get; set; } = new();
+    [Parameter] public decimal RequiredQty { get; set; }
+    [Parameter] public string Unidad { get; set; } = "";
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string scanValue = "";
+    private string? errorMsg;
+
+    private decimal SelectedWeight => SelectedFolios.Sum(f => AvailableLots.FirstOrDefault(l => l.Lote == f)?.Real ?? 0);
+
+    private void OnKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter") return;
+        var code = scanValue.Trim();
+        errorMsg = null;
+        if (string.IsNullOrEmpty(code)) return;
+
+        if (SelectedFolios.Contains(code, StringComparer.OrdinalIgnoreCase))
+        {
+            errorMsg = $"El lote {code} ya fue capturado.";
+        }
+        else if (!AvailableLots.Any(l => string.Equals(l.Lote, code, StringComparison.OrdinalIgnoreCase)))
+        {
+            errorMsg = $"Lote {code} no encontrado o no aprobado.";
+        }
+        else
+        {
+            SelectedFolios.Add(code);
+        }
+        scanValue = "";
+    }
+
+    private void Remove(string folio) => SelectedFolios.Remove(folio);
+}

@@ -5,12 +5,13 @@
 
 <div class="o_control_panel">
     <div class="d-flex align-items-center gap-3">
-        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Ventas"), new("Pedidos") })" />
-    </div>
-    <div class="d-flex align-items-center gap-2">
         <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: los pedidos nacen de la sincronización con CONTPAQi">
             <i class="bi bi-plus-lg me-1"></i> Nuevo
         </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Pedidos") })" />
+    </div>
+    <OdooSearchBox @bind-Value="searchText" />
+    <div class="d-flex align-items-center gap-2">
         <OdooViewSwitcher />
     </div>
 </div>
@@ -24,9 +25,9 @@
                 <div class="o_kanban_column">
                     <div class="o_kanban_column_title">
                         <span>@stage</span>
-                        <span class="badge bg-secondary">@(Flow.CurrentOrderStage == stage ? 1 : 0)</span>
+                        <span class="badge bg-secondary">@(ShowRow && Flow.CurrentOrderStage == stage ? 1 : 0)</span>
                     </div>
-                    @if (Flow.CurrentOrderStage == stage)
+                    @if (ShowRow && Flow.CurrentOrderStage == stage)
                     {
                         <div class="kanban-card" @onclick="GoToForm">
                             <div class="fw-bold text-dark small">@SampleFolio</div>
@@ -44,6 +45,7 @@
         <table class="table table-hover align-middle bg-white shadow-sm">
             <thead class="table-light">
                 <tr>
+                    <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
                     <th>Folio</th>
                     <th>Cliente</th>
                     <th>SKU Producto Terminado</th>
@@ -52,25 +54,38 @@
                 </tr>
             </thead>
             <tbody>
-                <tr style="cursor:pointer;" @onclick="GoToForm">
-                    <td class="fw-bold text-primary">@SampleFolio</td>
-                    <td>@SampleCustomer</td>
-                    <td>@SampleSku</td>
-                    <td class="text-end">1,470.0 KG</td>
-                    <td><span class="badge badge-brand">@Flow.CurrentOrderStage</span></td>
-                </tr>
+                @if (ShowRow)
+                {
+                    <tr style="cursor:pointer;" class="@(selected ? "table-active" : "")" @onclick="GoToForm">
+                        <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected" @onchange="() => selected = !selected" /></td>
+                        <td class="fw-semibold text-primary">@SampleFolio</td>
+                        <td>@SampleCustomer</td>
+                        <td>@SampleSku</td>
+                        <td class="text-end">5,500.0 PZA</td>
+                        <td><span class="badge badge-brand">@Flow.CurrentOrderStage</span></td>
+                    </tr>
+                }
             </tbody>
         </table>
-        <p class="text-muted small mt-2"><i class="bi bi-info-circle me-1"></i> Esta demo mantiene un único pedido de ejemplo; la vista soporta múltiples filas sin cambios cuando se conecte a datos reales.</p>
     }
+    <OdooPager Count="@(ShowRow ? 1 : 0)" />
 </div>
 
 @code {
-    private const string SampleFolio = "IV214-26";
-    private const string SampleCustomer = "OWENS AMERICA";
-    private const string SampleSku = "PT-OWENS-TE6048-01";
+    private const string SampleFolio = OperationalFlowState.PedidoFolio;
+    private const string SampleCustomer = "EMPRESA MEXICANA DE MANUFACTURA";
+    private const string SampleSku = "PT1113 C567";
 
     private static readonly List<string> Stages = new() { "Borrador", "Confirmado", "Autorizado", "En progreso", "Hecho" };
+
+    private string searchText = "";
+    private bool selected = false;
+    private bool ShowRow => string.IsNullOrWhiteSpace(searchText)
+        || SampleFolio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        || SampleCustomer.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+        || SampleSku.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+
+    private void ToggleAll(ChangeEventArgs e) => selected = e.Value is bool b && b;
 
     [Inject] private NavigationManager NavManager { get; set; } = default!;
 

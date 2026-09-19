@@ -1,0 +1,147 @@
+@page "/calidad/{FolioOf}"
+@inject OperationalFlowState Flow
+@inject NavigationManager NavManager
+@implements IDisposable
+
+@if (Of == null)
+{
+    <div class="p-4">Orden de Fabricación no encontrada.</div>
+}
+else
+{
+    <div class="o_control_panel">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: las fichas de Calidad nacen de la Orden de Fabricación">
+                <i class="bi bi-plus-lg me-1"></i> Nuevo
+            </button>
+            <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Control de Calidad", "/calidad"), new(QcFolio) })" />
+        </div>
+        <div class="o_button_box">
+            <OdooSmartButtons Buttons="@SmartButtons" OnSmartNavigate="@((route) => NavManager.NavigateTo(route))" />
+        </div>
+    </div>
+
+    <div class="p-4">
+        <div class="d-flex gap-3 align-items-start">
+            <div class="o_form_sheet flex-grow-1">
+                <div class="o_statusbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-success btn-sm px-3" @onclick="AprobarTodo" disabled="@(Pendientes == 0 ? "disabled" : null)">
+                            <i class="bi bi-check-circle me-1"></i> Aprueba
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm px-3" @onclick="FallarUltimo" disabled="@(Pendientes == 0 ? "disabled" : null)">
+                            <i class="bi bi-x-circle me-1"></i> Falla
+                        </button>
+                    </div>
+                    <span class="badge badge-brand px-3 py-2">@EstadoQc</span>
+                </div>
+
+                <div class="o_sheet_body">
+                    <h3 class="fw-bold mb-1">Control de calidad</h3>
+                    <h4 class="fw-bold text-primary mb-3">@QcFolio</h4>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="o_form_label_row"><span class="o_form_label">Producto</span><span class="o_form_value fw-semibold">@Of.Producto</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Orden de Fabricación</span><span class="o_form_value"><a href="/fabricacion/@Of.Folio" class="text-decoration-none">@Of.Folio</a></span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="o_form_label_row"><span class="o_form_label">Auditor</span><span class="o_form_value">Armando Silva</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Proceso</span><span class="o_form_value">@Of.ProcessLabel</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Estado</span><span class="o_form_value">@EstadoQc</span></div>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item"><button class="nav-link @(Tab == "controles" ? "active" : "")" @onclick='() => Tab = "controles"'>Controles</button></li>
+                        <li class="nav-item"><button class="nav-link @(Tab == "notas" ? "active" : "")" @onclick='() => Tab = "notas"'>Notas</button></li>
+                    </ul>
+
+                    @if (Tab == "controles")
+                    {
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="text-muted small"><tr><th>#</th><th>Producto</th><th>Lote</th><th class="text-end">Cantidad</th><th class="text-end">Real</th><th>Aprueba</th></tr></thead>
+                            <tbody>
+                                @if (Of.Produccion.Count == 0)
+                                {
+                                    <tr><td colspan="6" class="text-muted small fst-italic">Sin lotes capturados todavía en Producción.</td></tr>
+                                }
+                                @for (int i = 0; i < Of.Produccion.Count; i++)
+                                {
+                                    var lote = Of.Produccion[i];
+                                    <tr>
+                                        <td>@(i + 1)</td>
+                                        <td class="small">@Of.Producto</td>
+                                        <td><code>@lote.Lote</code></td>
+                                        <td class="text-end">@CantidadPlaneadaPorLote.ToString("N1")</td>
+                                        <td class="text-end">@lote.Real.ToString("N1") @lote.Unidad</td>
+                                        <td>
+                                            @if (lote.Estado == "En revisión")
+                                            {
+                                                <button class="btn btn-sm btn-outline-success me-1" @onclick="() => Flow.AprobarLote(lote)">Aprueba</button>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => Flow.RechazarLote(lote)">Falla</button>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge @(lote.Estado == "Aprobado" ? "bg-success" : "bg-danger")">@lote.Estado</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <textarea class="form-control" rows="4" placeholder="Notas de calidad..."></textarea>
+                    }
+                </div>
+            </div>
+            <OdooChatterDrawer Messages="@chatterEntries" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string FolioOf { get; set; } = "";
+
+    private string Tab = "controles";
+    private ManufacturingOrder? Of => Flow.GetOrder(FolioOf);
+    private string QcFolio => "QC-" + FolioOf.Replace("/", "-");
+    private int Pendientes => Of?.Produccion.Count(l => l.Estado == "En revisión") ?? 0;
+    private decimal CantidadPlaneadaPorLote => Of == null || Of.NumeroRollos == 0 ? 0 : Of.Cantidad / Of.NumeroRollos;
+
+    private string EstadoQc
+    {
+        get
+        {
+            if (Of == null || Of.Produccion.Count == 0) return "Planeado";
+            if (Of.Produccion.Any(l => l.Estado == "En revisión")) return "Parcial";
+            return Of.Produccion.Any(l => l.Estado == "Rechazado") ? "Parcial" : "Aprobado";
+        }
+    }
+
+    private List<OdooSmartButtons.SmartButtonModel> SmartButtons => new()
+    {
+        new() { Label = "Orden de Fabricación", CountBadge = 1, IconClass = "bi bi-gear-wide-connected", TargetRoute = $"/fabricacion/{FolioOf}" }
+    };
+
+    private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
+    {
+        new() { Timestamp = "hoy", Text = "Ficha de Control de Calidad generada." }
+    };
+
+    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+    public void Dispose() => Flow.OnChange -= StateHasChanged;
+
+    private void AprobarTodo()
+    {
+        var lote = Of?.Produccion.FirstOrDefault(l => l.Estado == "En revisión");
+        if (lote != null) Flow.AprobarLote(lote);
+    }
+
+    private void FallarUltimo()
+    {
+        var lote = Of?.Produccion.FirstOrDefault(l => l.Estado == "En revisión");
+        if (lote != null) Flow.RechazarLote(lote);
+    }
+}
