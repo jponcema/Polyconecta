@@ -107,6 +107,7 @@ public class InterplantTransferState
     public string ContpaqId { get; set; } = "";
     public int Step { get; set; } // 0 Borrador,1 En espera de operación,2 En espera,3 Listo,4 Hecho
     public string? Warning { get; set; }
+    public string? Error { get; set; }
     public List<ShipmentLine> Lineas { get; set; } = new()
     {
         new() { Clave = "PT3413 C4235", Producto = "ROLLO TUB 20.5 370 (Maestro)", Demanda = 500, Entregado = 0, Unidad = "KGS" }
@@ -138,6 +139,7 @@ public class ReceptionState
     public string ContpaqId { get; set; } = "";
     public int Step { get; set; } // 0 Borrador,1 En espera,2 Listo,3 Hecho
     public string? Warning { get; set; }
+    public string? Error { get; set; }
     public List<ShipmentLine> Lineas { get; set; } = new()
     {
         new() { Clave = "PT3413 C4235", Producto = "ROLLO TUB 20.5 370 (Maestro)", Demanda = 500, Entregado = 0, Unidad = "KGS" }
@@ -163,6 +165,7 @@ public class DeliveryState
     public string ContpaqId { get; set; } = "";
     public int Step { get; set; } // 0 Borrador,1 En espera,2 Listo,3 Hecho
     public string? Warning { get; set; }
+    public string? Error { get; set; }
     public List<ShipmentLine> Lineas { get; set; } = new()
     {
         new() { Clave = "PT1113 C567", Producto = "BOLSA MEDIANA 44X84 C.430 BOL-004 [77]", Demanda = 5500, Entregado = 0, Unidad = "PZA" }
@@ -406,64 +409,75 @@ public class OperationalFlowState
     public void ValidarTraslado()
     {
         if (Traslado.Step >= 4) { Notify(); return; }
-        Traslado.Step++;
-        if (Traslado.Step == 4)
+        if (Traslado.Step == 3)
         {
-            var pool = GetLotesDisponiblesTraslado();
-            decimal real = 0, demanda = 0;
-            foreach (var l in Traslado.Lineas)
-            {
-                l.Entregado = l.LotesSeleccionados.Sum(f => pool.FirstOrDefault(x => x.Lote == f)?.Real ?? 0);
-                real += l.Entregado;
-                demanda += l.Demanda;
-            }
-            Traslado.Warning = real < demanda
-                ? $"Traslado parcial: {real:N1} de {demanda:N1} {Traslado.Lineas.FirstOrDefault()?.Unidad} enviados."
-                : null;
+            var ok = CerrarSalida(Traslado.Lineas, GetLotesDisponiblesTraslado(), out var warning, out var error, "Traslado");
+            Traslado.Warning = warning;
+            Traslado.Error = error;
+            if (!ok) { Notify(); return; } // 0 capturado: la salida de inventario no ocurrió, no se avanza la etapa
         }
+        Traslado.Step++;
         Notify();
     }
 
     public void ValidarRecepcion()
     {
         if (Recepcion.Step >= 3) { Notify(); return; }
-        Recepcion.Step++;
-        if (Recepcion.Step == 3)
+        if (Recepcion.Step == 2)
         {
-            var pool = GetLotesDisponiblesTraslado();
-            decimal real = 0, demanda = 0;
-            foreach (var l in Recepcion.Lineas)
-            {
-                l.Entregado = l.LotesSeleccionados.Sum(f => pool.FirstOrDefault(x => x.Lote == f)?.Real ?? 0);
-                real += l.Entregado;
-                demanda += l.Demanda;
-            }
-            Recepcion.Warning = real < demanda
-                ? $"Recepción parcial: {real:N1} de {demanda:N1} {Recepcion.Lineas.FirstOrDefault()?.Unidad} recibidos."
-                : null;
+            var ok = CerrarSalida(Recepcion.Lineas, GetLotesDisponiblesTraslado(), out var warning, out var error, "Recepción");
+            Recepcion.Warning = warning;
+            Recepcion.Error = error;
+            if (!ok) { Notify(); return; }
         }
+        Recepcion.Step++;
         Notify();
     }
 
     public void ValidarEntrega()
     {
         if (Entrega.Step >= 3) { Notify(); return; }
-        Entrega.Step++;
-        if (Entrega.Step == 3)
+        if (Entrega.Step == 2)
         {
-            var pool = GetLotesDisponiblesEntrega();
-            decimal real = 0, demanda = 0;
-            foreach (var l in Entrega.Lineas)
-            {
-                l.Entregado = l.LotesSeleccionados.Sum(f => pool.FirstOrDefault(x => x.Lote == f)?.Real ?? 0);
-                real += l.Entregado;
-                demanda += l.Demanda;
-            }
-            Entrega.Warning = real < demanda
-                ? $"Entrega parcial: {real:N1} de {demanda:N1} {Entrega.Lineas.FirstOrDefault()?.Unidad} entregados."
-                : null;
+            var ok = CerrarSalida(Entrega.Lineas, GetLotesDisponiblesEntrega(), out var warning, out var error, "Entrega");
+            Entrega.Warning = warning;
+            Entrega.Error = error;
+            if (!ok) { Notify(); return; }
         }
+        Entrega.Step++;
         Notify();
+    }
+
+    /// <summary>
+    /// Cierra la operación de inventario de un documento de logística: calcula lo realmente
+    /// capturado (suma de lotes seleccionados) contra la demanda. Si no se capturó nada,
+    /// rechaza el cierre (la salida/entrada de inventario no ocurrió) — devuelve false y no
+    /// modifica Entregado. Si es parcial, permite el cierre pero deja una advertencia.
+    /// </summary>
+    private static bool CerrarSalida(List<ShipmentLine> lineas, List<ProductionLot> pool, out string? warning, out string? error, string nombreDocumento)
+    {
+        decimal real = 0, demanda = 0;
+        foreach (var l in lineas)
+        {
+            real += l.LotesSeleccionados.Sum(f => pool.FirstOrDefault(x => x.Lote == f)?.Real ?? 0);
+            demanda += l.Demanda;
+        }
+
+        if (real == 0)
+        {
+            warning = null;
+            error = $"No se puede validar: no hay lotes capturados. Selecciona al menos un lote antes de cerrar el {nombreDocumento.ToLowerInvariant()}.";
+            return false;
+        }
+
+        foreach (var l in lineas)
+            l.Entregado = l.LotesSeleccionados.Sum(f => pool.FirstOrDefault(x => x.Lote == f)?.Real ?? 0);
+
+        error = null;
+        warning = real < demanda
+            ? $"{nombreDocumento} parcial: {real:N1} de {demanda:N1} {lineas.FirstOrDefault()?.Unidad}."
+            : null;
+        return true;
     }
 
     public void ResetAll()
@@ -480,12 +494,15 @@ public class OperationalFlowState
         }
         Traslado.Step = 0;
         Traslado.Warning = null;
+        Traslado.Error = null;
         Traslado.Lineas.ForEach(l => { l.Entregado = 0; l.LotesSeleccionados.Clear(); });
         Recepcion.Step = 0;
         Recepcion.Warning = null;
+        Recepcion.Error = null;
         Recepcion.Lineas.ForEach(l => { l.Entregado = 0; l.LotesSeleccionados.Clear(); });
         Entrega.Step = 0;
         Entrega.Warning = null;
+        Entrega.Error = null;
         Entrega.Lineas.ForEach(l => { l.Entregado = 0; l.LotesSeleccionados.Clear(); });
         Notify();
     }

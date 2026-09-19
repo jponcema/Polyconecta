@@ -50,6 +50,10 @@
                     </div>
                 </div>
 
+                @if (!string.IsNullOrEmpty(Flow.Entrega.Error))
+                {
+                    <div class="alert alert-danger py-2 px-3 small mb-3"><i class="bi bi-x-octagon me-1"></i>@Flow.Entrega.Error</div>
+                }
                 @if (!string.IsNullOrEmpty(Flow.Entrega.Warning))
                 {
                     <div class="alert alert-warning py-2 px-3 small mb-3"><i class="bi bi-exclamation-triangle me-1"></i>@Flow.Entrega.Warning</div>
