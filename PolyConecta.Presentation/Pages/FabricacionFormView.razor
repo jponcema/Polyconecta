@@ -1,5 +1,7 @@
 @page "/fabricacion/{FolioOf}"
 @inject OperationalFlowState Flow
+@inject InventoryState Inv
+@inject StockOperationState Ops
 @inject NavigationManager NavManager
 @implements IDisposable
 
@@ -22,29 +24,29 @@ else
     </div>
 
     <div class="p-4">
+        <div class="o_statusbar">
+            <div class="d-flex align-items-center gap-2">
+                @if (Of.State == "Borrador")
+                {
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.Planear(FolioOf)" disabled="@(Of.Componentes.Count == 0 ? "disabled" : null)">
+                        <i class="bi bi-check-circle me-1"></i> Confirmar
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/fabricacion")'>Cancelar</button>
+                }
+                else if (Of.State != "Hecho")
+                {
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.CerrarProduccion(FolioOf)" disabled="@(!PuedeCerrar ? "disabled" : null)">
+                        <i class="bi bi-box-arrow-in-down me-1"></i> Cerrar Producción
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/fabricacion")'>Cancelar</button>
+                }
+            </div>
+        </div>
+
         <div class="d-flex gap-3 align-items-start">
             <div class="o_form_sheet flex-grow-1">
-                <div class="o_statusbar">
-                    <div class="d-flex align-items-center gap-2">
-                        @if (Of.State == "Borrador")
-                        {
-                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.Planear(FolioOf)" disabled="@(Of.Componentes.Count == 0 ? "disabled" : null)">
-                                <i class="bi bi-check-circle me-1"></i> Confirmar
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/fabricacion")'>Cancelar</button>
-                        }
-                        else if (Of.State != "Hecho")
-                        {
-                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.CerrarProduccion(FolioOf)" disabled="@(!PuedeCerrar ? "disabled" : null)">
-                                <i class="bi bi-box-arrow-in-down me-1"></i> Cerrar Producción
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/fabricacion")'>Cancelar</button>
-                        }
-                    </div>
-                    <OdooStatusPipeline Stages="@Stages" CurrentStage="@Of.State" />
-                </div>
-
                 <div class="o_sheet_body">
+                    <OdooStatusPipeline Stages="@Stages" CurrentStage="@Of.State" />
                     <h3 class="fw-bold mb-1">Orden de fabricación</h3>
                     <h4 class="fw-bold text-primary mb-3">@Of.Folio</h4>
 
@@ -53,7 +55,7 @@ else
                             <div class="o_form_label_row"><span class="o_form_label">Producto</span><span class="o_form_value fw-semibold">@Of.Producto</span></div>
                             <div class="o_form_label_row"><span class="o_form_label">Cantidad</span><span class="o_form_value">@Of.Cantidad.ToString("N1") <span class="text-muted">@Of.Unidad</span></span></div>
                             <div class="o_form_label_row"><span class="o_form_label">Proceso</span><span class="o_form_value">@Of.ProcessLabel</span></div>
-                            <div class="o_form_label_row"><span class="o_form_label">Calidad</span><span class="o_form_value">@(Of.CalidadRequerida ? "Requerida" : "No requerida") — Almacén Falla: @Of.AlmacenFalla</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Calidad</span><span class="o_form_value d-flex align-items-center gap-2"><input type="checkbox" class="form-check-input mt-0" id="chk-calidad" checked="@Of.CalidadRequerida" @onchange="ToggleCalidadRequerida" /><label class="mb-0" for="chk-calidad">Requerida</label><span class="text-muted">— Almacén Falla: @Of.AlmacenFalla</span></span></div>
                         </div>
                         <div class="col-md-6">
                             <div class="o_form_label_row"><span class="o_form_label">Empresa</span><span class="o_form_value">@Of.Empresa</span></div>
@@ -113,16 +115,20 @@ else
                     @if (Tab == "componentes")
                     {
                         <table class="table table-sm align-middle mb-0">
-                            <thead class="text-muted small"><tr><th>Clave</th><th>Producto</th><th class="text-end">Cantidad</th><th style="width:70px;">Unidad</th><th style="width:56px;"></th></tr></thead>
+                            <thead class="text-muted small"><tr><th style="width:15%;">Clave</th><th>Producto</th><th class="text-center" style="width:110px;">Cantidad</th><th class="text-center" style="width:110px;" title="Disponible en @InventoryState.AlmacenMateriaPrima (CONTPAQi)">Existencia</th><th class="text-center" style="width:80px;">Unidad</th><th class="text-center" style="width:64px;"></th></tr></thead>
                             <tbody>
                                 @foreach (var line in Of.Componentes.ToList())
                                 {
                                     <tr class="@(editingComponente == line ? "table-active" : "")">
                                         <td class="small">@line.Clave</td>
                                         <td>@line.Producto</td>
-                                        <td class="text-end">@line.Cantidad.ToString("N1")</td>
-                                        <td class="small">@line.Unidad</td>
-                                        <td>
+                                        <td class="text-center">@line.Cantidad.ToString("N1")</td>
+                                        @{
+                                            var existencia = Inv.Disponible(line.Clave, InventoryState.AlmacenMateriaPrima);
+                                        }
+                                        <td class="text-center fw-semibold @(existencia < line.Cantidad ? "text-danger" : "text-primary")" title="Disponible en @InventoryState.AlmacenMateriaPrima (CONTPAQi)">@existencia.ToString("N1")</td>
+                                        <td class="small text-center">@line.Unidad</td>
+                                        <td class="text-center">
                                             @if (Of.State == "Borrador")
                                             {
                                                 <button class="btn btn-sm btn-link p-0 me-2" title="Editar" @onclick="() => editingComponente = line"><i class="bi bi-pencil"></i></button>
@@ -133,6 +139,7 @@ else
                                 }
                             </tbody>
                         </table>
+
                     }
                     else if (Tab == "subproductos")
                     {
@@ -224,7 +231,18 @@ else
     }
 
     private ManufacturingOrder? Of => Flow.GetOrder(FolioOf);
-    private bool PuedeCerrar => Of != null && (!Of.CalidadRequerida || Of.Produccion.All(l => l.Estado != "En revisión")) && Of.Produccion.Count > 0;
+    private void ToggleCalidadRequerida(ChangeEventArgs e)
+    {
+        if (Of != null) Of.CalidadRequerida = e.Value is true;
+    }
+
+    private bool PuedeCerrar => Of != null
+        && (!Of.CalidadRequerida || Of.Produccion.All(l => l.Estado != "En revisión"))
+        && Of.Produccion.Count > 0
+        && Ops.PuedeCerrarOf(FolioOf, out _);
+
+    private string Planta => Of?.ProcessType == "Extrusion" ? "PIM" : "SC";
+
 
     private BomLine? editingComponente;
     private string nuevaClave = ""; private string nuevoProducto = ""; private decimal nuevaCantidad; private string nuevaUnidad = "KGS";
@@ -304,7 +322,11 @@ else
                 list.Add(new() { Label = "Pedido", CountBadge = 1, IconClass = "bi bi-cart-check", TargetRoute = $"/pedidos/{OperationalFlowState.PedidoFolio}" });
 
             if (secundarias.Count > 0)
-                list.Add(new() { Label = "Traslado", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = "/traslados/18293" });
+                list.Add(new() { Label = "Traslado", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = $"/traslados/{Flow.Traslado.Folio}" });
+
+            var recolecciones = Ops.DeOf(FolioOf);
+            if (recolecciones.Count > 0)
+                list.Add(new() { Label = "Recolección", CountBadge = recolecciones.Count, IconClass = "bi bi-box-arrow-right", TargetRoute = $"/recolecciones/{recolecciones[0].Folio}" });
 
             list.Add(new() { Label = "Calidad", CountBadge = 1, IconClass = "bi bi-shield-check", TargetRoute = $"/calidad/{FolioOf}" });
             return list;
@@ -316,9 +338,19 @@ else
         new() { Timestamp = "hoy", Text = "Orden de Fabricación generada." }
     };
 
-    protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
+    protected override void OnInitialized()
+    {
+        Flow.OnChange += StateHasChanged;
+        Inv.OnChange += StateHasChanged;
+        Ops.OnChange += StateHasChanged;
+    }
 
-    public void Dispose() => Flow.OnChange -= StateHasChanged;
+    public void Dispose()
+    {
+        Flow.OnChange -= StateHasChanged;
+        Inv.OnChange -= StateHasChanged;
+        Ops.OnChange -= StateHasChanged;
+    }
 
     private void GuardarComponente()
     {

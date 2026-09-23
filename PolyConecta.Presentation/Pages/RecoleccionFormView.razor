@@ -1,0 +1,190 @@
+@page "/recolecciones/{*Folio}"
+@inject StockOperationState Ops
+@* Las recolecciones nacen con las Órdenes de Fabricación: inyectar el flujo garantiza que existan. *@
+@inject OperationalFlowState Flow
+@inject InventoryState Inv
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="o_control_panel">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual fuera de alcance de esta demo">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo
+        </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Recolecciones", "/recolecciones"), new(Folio ?? "") })" />
+    </div>
+    <div class="o_button_box">
+        <OdooSmartButtons Buttons="@SmartButtons" OnSmartNavigate="@((route) => NavManager.NavigateTo(route))" />
+    </div>
+</div>
+
+<div class="p-4">
+    @if (Op == null)
+    {
+        <div class="alert alert-warning">No se encontró la recolección <strong>@Folio</strong>.</div>
+    }
+    else
+    {
+        <div class="o_statusbar">
+            <div class="d-flex align-items-center gap-2">
+                @if (Op.State != "Hecho")
+                {
+                    <button class="btn btn-outline-secondary btn-sm px-3" @onclick="() => Ops.ComprobarDisponibilidad(Op)">
+                        <i class="bi bi-search me-1"></i> Comprobar disponibilidad
+                    </button>
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="Validar">
+                        <i class="bi bi-check2-circle me-1"></i> Validar
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm px-3" @onclick="Cancelar">Cancelar</button>
+                }
+                <button class="btn btn-outline-secondary btn-sm px-3"><i class="bi bi-printer me-1"></i> Imprimir</button>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3 align-items-start">
+            <div class="o_form_sheet flex-grow-1">
+                <div class="o_sheet_body">
+                    <OdooStatusPipeline Stages="@Stages" CurrentStage="@Op.State" />
+                    <h3 class="fw-bold mb-1">Orden de recolección</h3>
+                    <h4 class="fw-bold text-primary mb-3">@Op.Folio</h4>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="o_form_label_row"><span class="o_form_label">Operación</span><span class="o_form_value fw-semibold">@Op.Operacion</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Origen</span><span class="o_form_value">@Op.Origen</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Destino</span><span class="o_form_value">@Op.Destino</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="o_form_label_row"><span class="o_form_label">Fecha Programada</span><span class="o_form_value">@Op.Fecha.ToString("dd MMM yy")</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Fecha Límite</span><span class="o_form_value">@Op.FechaLimite.ToString("dd MMM yy")</span></div>
+                            <div class="o_form_label_row"><span class="o_form_label">Contpaq ID</span><span class="o_form_value">@(string.IsNullOrEmpty(Op.ContpaqId) ? "— (pendiente de validar)" : Op.ContpaqId)</span></div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Op.Error))
+                    {
+                        <div class="alert alert-danger py-2 px-3 small mb-3"><i class="bi bi-x-octagon me-1"></i>@Op.Error</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Op.Warning))
+                    {
+                        <div class="alert alert-warning py-2 px-3 small mb-3"><i class="bi bi-exclamation-triangle me-1"></i>@Op.Warning</div>
+                    }
+                    @if (Op.BackorderDe != null)
+                    {
+                        <div class="alert alert-light border py-2 px-3 small mb-3">
+                            <i class="bi bi-arrow-return-right me-1"></i>
+                            Remanente de <a href="/recolecciones/@Op.BackorderDe" class="fw-semibold">@Op.BackorderDe</a>.
+                        </div>
+                    }
+
+                    <ul class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item"><button class="nav-link active">Operaciones</button></li>
+                    </ul>
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="text-muted small"><tr><th>Clave</th><th>Producto</th><th class="text-end">Demanda</th><th class="text-end">Cant. Entregada</th><th style="width:70px;">Unidad</th><th>Lotes</th></tr></thead>
+                        <tbody>
+                            @foreach (var l in Op.Lineas)
+                            {
+                                <tr>
+                                    <td class="small">@l.Clave</td>
+                                    <td>@l.Producto</td>
+                                    <td class="text-end">@l.Solicitado.ToString("N1")</td>
+                                    <td class="text-end">@l.Entregado.ToString("N1")</td>
+                                    <td class="small">@l.Unidad</td>
+                                    <td>
+                                        @if (Op.State != "Hecho")
+                                        {
+                                            <button class="btn btn-link btn-sm p-0 text-decoration-none" @onclick="() => lotModalLine = l">
+                                                @(l.Asignaciones.Count > 0 ? $"{l.Asignaciones.Count} lote(s) · {l.Declarado:N1}" : "Seleccionar")
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="small text-muted">@l.Entregado.ToString("N1") @l.Unidad</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <OdooChatterDrawer Messages="@chatterEntries" />
+        </div>
+    }
+</div>
+
+<LotQuantityPickerModal Show="@(lotModalLine != null)"
+                        Line="@lotModalLine"
+                        AvailableLots="@LotesElegibles"
+                        Origen="@(Op?.Origen ?? "")"
+                        OnAdd="@(a => Ops.AsignarLote(Op!, lotModalLine!, a.Lote, a.Cantidad))"
+                        OnRemove="@(a => Ops.QuitarLote(Op!, lotModalLine!, a))"
+                        OnClose="@(() => lotModalLine = null)" />
+
+@code {
+    [Parameter] public string? Folio { get; set; }
+
+    private StockOperationLine? lotModalLine;
+
+    private static readonly List<string> Stages = new() { "Borrador", "En espera", "Listo", "Hecho" };
+
+    private StockOperation? Op => Folio == null ? null : Ops.Get(Folio);
+
+    private List<LotBalance> LotesElegibles
+    {
+        get
+        {
+            if (Op == null || lotModalLine == null) return new();
+            return Op.Tipo.EsDevolucion
+                ? Inv.SaldoWip(Op.OfFolio).Where(l => l.Clave == lotModalLine.Clave).ToList()
+                : Inv.LotesDisponibles(lotModalLine.Clave, Op.Origen);
+        }
+    }
+
+    private List<OdooSmartButtons.SmartButtonModel> SmartButtons
+    {
+        get
+        {
+            var lista = new List<OdooSmartButtons.SmartButtonModel>
+            {
+                new() { Label = "Orden de Fabricación", CountBadge = 1, IconClass = "bi bi-gear-wide-connected", TargetRoute = $"/fabricacion/{Op?.OfFolio}" }
+            };
+            var hermanas = Op == null ? new List<StockOperation>() : Ops.DeOf(Op.OfFolio).Where(o => o.Folio != Op.Folio).ToList();
+            if (hermanas.Count > 0)
+                lista.Add(new() { Label = "Recolecciones", CountBadge = hermanas.Count, IconClass = "bi bi-box-arrow-right", TargetRoute = "/recolecciones" });
+            return lista;
+        }
+    }
+
+    private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
+    {
+        new() { Timestamp = "hoy", Text = "Recolección solicitada por Producción." }
+    };
+
+    private void Validar()
+    {
+        if (Op == null) return;
+        lotModalLine = null;
+        var backorder = Ops.Validar(Op, out _);
+        if (backorder != null) NavManager.NavigateTo($"/recolecciones/{backorder.Folio}");
+    }
+
+    private void Cancelar()
+    {
+        if (Op == null) return;
+        Ops.Cancelar(Op);
+        NavManager.NavigateTo("/recolecciones");
+    }
+
+    protected override void OnInitialized()
+    {
+        Ops.OnChange += StateHasChanged;
+        Inv.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Ops.OnChange -= StateHasChanged;
+        Inv.OnChange -= StateHasChanged;
+    }
+}

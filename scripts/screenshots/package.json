@@ -1,0 +1,12 @@
+{
+  "name": "polyconecta-screenshots",
+  "private": true,
+  "type": "module",
+  "description": "Recorre PolyConecta y captura cada pantalla en .jpeg",
+  "scripts": {
+    "capture": "node capture.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

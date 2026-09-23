@@ -1,14 +1,23 @@
 @inject PolyConecta.Presentation.Services.UiViewState ViewState
 
 <div class="btn-group btn-group-sm o_view_switcher">
-    <button class="btn-view @(ViewState.ViewMode == "List" ? "active" : "")" title="Vista de lista" @onclick='() => SetMode("List")'>
+    <button class="btn-view @(IsListActive ? "active" : "")" title="Vista de lista"
+            disabled="@(!KanbanEnabled)" @onclick='() => SetMode("List")'>
         <i class="bi bi-list-ul"></i>
     </button>
-    <button class="btn-view @(ViewState.ViewMode == "Kanban" ? "active" : "")" title="Vista kanban" @onclick='() => SetMode("Kanban")'>
-        <i class="bi bi-kanban"></i>
-    </button>
+    @if (KanbanEnabled)
+    {
+        <button class="btn-view @(ViewState.ViewMode == "Kanban" ? "active" : "")" title="Vista kanban" @onclick='() => SetMode("Kanban")'>
+            <i class="bi bi-kanban"></i>
+        </button>
+    }
 </div>
 
 @code {
+    /// <summary>Vistas que ofrecen solo lista (captura masiva, incidencias) pasan false.</summary>
+    [Parameter] public bool KanbanEnabled { get; set; } = true;
+
+    private bool IsListActive => !KanbanEnabled || ViewState.ViewMode == "List";
+
     private void SetMode(string mode) => ViewState.SetViewMode(mode);
 }

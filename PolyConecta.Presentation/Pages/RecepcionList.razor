@@ -31,7 +31,7 @@
             {
                 <tr style="cursor:pointer;" class="@(selected ? "table-active" : "")" @onclick='() => NavManager.NavigateTo($"/recepcion/{Flow.Recepcion.Folio}")'>
                     <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected" @onchange="() => selected = !selected" /></td>
-                    <td class="fw-semibold text-primary">#@Flow.Recepcion.Folio</td>
+                    <td class="fw-semibold text-primary">@Flow.Recepcion.Folio</td>
                     <td>@Flow.Recepcion.Operacion</td>
                     <td>@Flow.Recepcion.Origen</td>
                     <td>@Flow.Recepcion.Destino</td>

@@ -1,4 +1,4 @@
-@page "/entregas/{Folio}"
+@page "/entregas/{*Folio}"
 @inject OperationalFlowState Flow
 @inject NavigationManager NavManager
 @implements IDisposable
@@ -8,7 +8,7 @@
         <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual fuera de alcance de esta demo">
             <i class="bi bi-plus-lg me-1"></i> Nuevo
         </button>
-        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Entregas", "/entregas"), new("#" + Folio) })" />
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Entregas", "/entregas"), new(Folio) })" />
     </div>
     <div class="o_button_box">
         <OdooSmartButtons Buttons="@SmartButtons" OnSmartNavigate="@((route) => NavManager.NavigateTo(route))" />
@@ -16,27 +16,27 @@
 </div>
 
 <div class="p-4">
+    <div class="o_statusbar">
+        <div class="d-flex align-items-center gap-2">
+            @if (Flow.Entrega.State != "Hecho")
+            {
+                <button class="btn btn-outline-secondary btn-sm px-3" @onclick="() => Flow.ComprobarDisponibilidadEntrega()">
+                    <i class="bi bi-search me-1"></i> Comprobar disponibilidad
+                </button>
+                <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.ValidarEntrega()">
+                    <i class="bi bi-check2-circle me-1"></i> Validar
+                </button>
+                <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/entregas")'>Cancelar</button>
+            }
+        </div>
+    </div>
+
     <div class="d-flex gap-3 align-items-start">
         <div class="o_form_sheet flex-grow-1">
-            <div class="o_statusbar">
-                <div class="d-flex align-items-center gap-2">
-                    @if (Flow.Entrega.State != "Hecho")
-                    {
-                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick="() => Flow.ComprobarDisponibilidadEntrega()">
-                            <i class="bi bi-search me-1"></i> Comprobar disponibilidad
-                        </button>
-                        <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.ValidarEntrega()">
-                            <i class="bi bi-check2-circle me-1"></i> Validar
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/entregas")'>Cancelar</button>
-                    }
-                </div>
-                <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.Entrega.State" />
-            </div>
-
             <div class="o_sheet_body">
+                <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.Entrega.State" />
                 <h3 class="fw-bold mb-1">Orden de entrega</h3>
-                <h4 class="fw-bold text-primary mb-3">#@Flow.Entrega.Folio</h4>
+                <h4 class="fw-bold text-primary mb-3">@Flow.Entrega.Folio</h4>
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
                         <div class="o_form_label_row"><span class="o_form_label">Operación</span><span class="o_form_value fw-semibold">@Flow.Entrega.Operacion</span></div>

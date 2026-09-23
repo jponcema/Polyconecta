@@ -1,0 +1,82 @@
+@page "/recolecciones"
+@inject StockOperationState Ops
+@* Las recolecciones nacen con las Órdenes de Fabricación: inyectar el flujo garantiza que existan. *@
+@inject OperationalFlowState Flow
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="o_control_panel">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual fuera de alcance de esta demo: las recolecciones nacen de la Orden de Fabricación">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo
+        </button>
+        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Recolecciones") })" />
+    </div>
+    <OdooSearchBox @bind-Value="searchText" />
+    <div class="d-flex align-items-center gap-2">
+        <div class="btn-group btn-group-sm o_view_switcher">
+            <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="p-4">
+    <table class="table table-hover align-middle bg-white shadow-sm">
+        <thead class="table-light">
+            <tr>
+                <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
+                <th>Folio</th><th>Operación</th><th>Origen</th><th>Destino</th><th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var op in Filtradas)
+            {
+                <tr style="cursor:pointer;" class="@(seleccionadas.Contains(op.Folio) ? "table-active" : "")" @onclick='() => NavManager.NavigateTo($"/recolecciones/{op.Folio}")'>
+                    <td @onclick:stopPropagation="true">
+                        <input type="checkbox" class="form-check-input" checked="@seleccionadas.Contains(op.Folio)" @onchange="() => Toggle(op.Folio)" />
+                    </td>
+                    <td class="fw-semibold text-primary">
+                        @op.Folio
+                        @if (op.BackorderDe != null)
+                        {
+                            <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1" style="font-size:.65rem;">backorder</span>
+                        }
+                    </td>
+                    <td>@op.Operacion</td>
+                    <td>@op.Origen</td>
+                    <td>@op.Destino</td>
+                    <td><span class="badge badge-brand">@op.State</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <OdooPager Count="@Filtradas.Count" />
+</div>
+
+@code {
+    private string searchText = "";
+    private readonly HashSet<string> seleccionadas = new();
+
+    private List<StockOperation> Filtradas => Ops.Operaciones
+        .Where(o => string.IsNullOrWhiteSpace(searchText)
+                 || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                 || o.Operacion.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                 || o.OfFolio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                 || o.Destino.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private void Toggle(string folio)
+    {
+        if (!seleccionadas.Remove(folio)) seleccionadas.Add(folio);
+    }
+
+    private void ToggleAll(ChangeEventArgs e)
+    {
+        seleccionadas.Clear();
+        if (e.Value is bool b && b)
+            foreach (var op in Filtradas) seleccionadas.Add(op.Folio);
+    }
+
+    protected override void OnInitialized() => Ops.OnChange += StateHasChanged;
+    public void Dispose() => Ops.OnChange -= StateHasChanged;
+}

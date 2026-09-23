@@ -5,14 +5,12 @@
 
 <div class="o_control_panel">
     <div class="d-flex align-items-center gap-3">
-        <button class="btn btn-outline-secondary btn-sm" disabled title="Fuera de alcance de esta demo"><i class="bi bi-upload me-1"></i> Subir Excel</button>
+        <button class="btn btn-outline-secondary btn-sm" disabled title="Fuera de alcance de esta demo"><i class="bi bi-file-earmark-excel me-1"></i> Importar</button>
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Captura Masiva de Producción") })" />
     </div>
     <OdooSearchBox @bind-Value="searchText" />
     <div class="d-flex align-items-center gap-2">
-        <div class="btn-group btn-group-sm o_view_switcher">
-            <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
-        </div>
+        <OdooViewSwitcher KanbanEnabled="false" />
     </div>
 </div>
 
@@ -24,7 +22,7 @@
                     <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
                     <th>Orden de fabricación</th><th>Producto</th><th>Estado</th><th>Pedido</th>
                     <th class="text-end">Cantidad</th><th>Unidad</th><th class="text-end">Producido</th>
-                    @for (int i = 1; i <= MaxRollos; i++) { <th class="text-end">R@i</th> }
+                    @for (int i = 1; i <= MaxRollos; i++) { <th class="text-end o_rollo_col">R@(i)</th> }
                 </tr>
             </thead>
             <tbody>
@@ -34,14 +32,14 @@
                         <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected.Contains(of.Folio)" @onchange="() => ToggleOne(of.Folio)" /></td>
                         <td class="fw-semibold text-primary small">@of.Folio</td>
                         <td class="small">@of.Producto</td>
-                        <td class="small">@of.State</td>
-                        <td class="small">@OperationalFlowState.PedidoFolio</td>
+                        <td><span class="badge @StateBadgeClass(of.State)">@of.State</span></td>
+                        <td class="small">@of.PedidoFolio</td>
                         <td class="text-end small">@of.Cantidad.ToString("N0")</td>
                         <td class="small">@of.Unidad</td>
                         <td class="text-end small fw-bold">@of.ProducidoTotal.ToString("N0")</td>
                         @for (int i = 0; i < MaxRollos; i++)
                         {
-                            <td class="text-end small">@(i < of.Produccion.Count ? of.Produccion[i].Real.ToString("N0") : "")</td>
+                            <td class="text-end small o_rollo_col">@(i < of.Produccion.Count ? of.Produccion[i].Real.ToString("N0") : "")</td>
                         }
                     </tr>
                 }
@@ -54,12 +52,26 @@
 @code {
     private string searchText = "";
     private readonly HashSet<string> selected = new();
-    private int MaxRollos => Flow.ManufacturingOrders.Count == 0 ? 0 : Flow.ManufacturingOrders.Max(o => o.Produccion.Count);
 
-    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders.Where(o =>
-        string.IsNullOrWhiteSpace(searchText)
-        || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+    /// <summary>Columnas de captura de kg por rollo (R1..R15), fijas.</summary>
+    private const int MaxRollos = 15;
+
+    /// <summary>La captura masiva es exclusiva de produccion de Extrusion.</summary>
+    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders
+        .Where(o => o.ProcessType == "Extrusion")
+        .Where(o => string.IsNullOrWhiteSpace(searchText)
+            || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            || o.PedidoFolio.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private static string StateBadgeClass(string state) => state switch
+    {
+        "En progreso" => "o_badge_progreso",
+        "Planeado" => "o_badge_planeado",
+        "Hecho" => "o_badge_hecho",
+        _ => "badge-brand"
+    };
 
     private void ToggleOne(string folio)
     {

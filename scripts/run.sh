@@ -42,21 +42,56 @@ else
 fi
 echo "================================================================="
 
-# Step 1: Check .NET 8 SDK
+# Step 1: Locate a .NET installation that can actually build & run net8.0.
 echo "🔍 Step 1: Checking .NET SDK environment..."
-if ! command -v dotnet &> /dev/null; then
-    echo "❌ Error: .NET SDK is not installed or not in PATH."
+
+# El criterio es el RUNTIME de ASP.NET Core 8.x, no la version del SDK: un SDK
+# mayor (9/10) compila net8.0 sin problema, pero solo si esa instalacion trae los
+# assets de ASP.NET Core 8. Si no los trae, _framework/blazor.web.js se emite
+# vacio -> 404 -> el circuito interactivo de Blazor nunca arranca -> UI inoperable.
+# (El SDK debe ser 9+ de todas formas: el formato .slnx no existe en el SDK 8.)
+has_aspnet8_runtime() {
+    "$1" --list-runtimes 2>/dev/null | grep -q '^Microsoft\.AspNetCore\.App 8\.'
+}
+
+DOTNET_BIN=""
+for candidate in "$(command -v dotnet 2>/dev/null)" \
+                 "/usr/local/share/dotnet/dotnet" \
+                 "/usr/share/dotnet/dotnet" \
+                 "$HOME/.dotnet/dotnet"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ] && has_aspnet8_runtime "$candidate"; then
+        DOTNET_BIN="$candidate"
+        break
+    fi
+done
+
+if [ -z "$DOTNET_BIN" ]; then
+    echo "❌ Error: No se encontro una instalacion de .NET con el runtime ASP.NET Core 8.x."
+    if command -v dotnet &> /dev/null; then
+        echo "   'dotnet' en PATH: $(command -v dotnet)"
+        echo "   Runtimes disponibles ahi:"
+        dotnet --list-runtimes 2>/dev/null | sed 's/^/     /'
+    fi
+    echo "   Instala el runtime 8 (macOS: brew install --cask dotnet-sdk@8)."
     exit 1
 fi
-echo "   Found .NET SDK version: $(dotnet --version)"
+
+# Antepone la instalacion elegida al PATH para que los procesos hijos
+# (testhost, dotnet run) usen esta misma instalacion de forma consistente.
+DOTNET_ROOT="$(dirname "$DOTNET_BIN")"
+export DOTNET_ROOT
+export PATH="$DOTNET_ROOT:$PATH"
+
+echo "   Using .NET installation: ${DOTNET_ROOT}"
+echo "   Found .NET SDK version: $("$DOTNET_BIN" --version)"
 
 # Step 2: Build complete solution
 echo "🛠️  Step 2: Building full solution (PolyConecta.slnx)..."
-dotnet build PolyConecta.slnx -c Debug
+"$DOTNET_BIN" build PolyConecta.slnx -c Debug
 
 # Step 3: Run test suites
 echo "🧪 Step 3: Running domain unit & integration test suites..."
-dotnet test PolyConecta.slnx --no-build --verbosity quiet
+"$DOTNET_BIN" test PolyConecta.slnx --no-build --verbosity quiet
 
 echo "================================================================="
 echo "✅ Build & Tests Succeeded! Launching PolyConecta Solution Layers..."
@@ -79,13 +114,13 @@ if [ "$WITH_BRIDGE" = true ]; then
     echo "🌉 CONTPAQi Bridge Worker         : http://localhost:${BRIDGE_PORT}"
     echo "-----------------------------------------------------------------"
     echo "Iniciando servicio CONTPAQi Bridge en segundo plano (Puerto ${BRIDGE_PORT})..."
-    dotnet run --project PolyConecta.Contpaq/PolyConecta.Contpaq.csproj --no-build --urls "http://localhost:${BRIDGE_PORT}" &
+    "$DOTNET_BIN" run --project PolyConecta.Contpaq/PolyConecta.Contpaq.csproj --no-build --urls "http://localhost:${BRIDGE_PORT}" &
     PIDS+=($!)
 fi
 
 echo "-----------------------------------------------------------------"
 echo "Iniciando PolyConecta Web Presentation en segundo plano (Puerto ${PRESENTATION_PORT})..."
-dotnet run --project PolyConecta.Presentation/PolyConecta.Presentation.csproj --no-build --urls "http://localhost:${PRESENTATION_PORT}" &
+"$DOTNET_BIN" run --project PolyConecta.Presentation/PolyConecta.Presentation.csproj --no-build --urls "http://localhost:${PRESENTATION_PORT}" &
 PIDS+=($!)
 
 echo "================================================================="
@@ -93,4 +128,4 @@ echo "Press Ctrl+C to stop the servers."
 echo "================================================================="
 
 # Step 4: Run PolyConecta.Api server in foreground
-dotnet run --project PolyConecta.Api/PolyConecta.Api.csproj --no-build --urls "http://localhost:${API_PORT}"
+"$DOTNET_BIN" run --project PolyConecta.Api/PolyConecta.Api.csproj --no-build --urls "http://localhost:${API_PORT}"

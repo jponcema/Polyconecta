@@ -35,14 +35,17 @@
 
     private static readonly List<(string Prefix, ModuleInfo Info)> ModuleMap = new()
     {
-        ("/pedidos", new("Ventas", new() { ("Pedidos", "/pedidos") })),
+        ("/pedidos", new("Ventas", new() { ("Pedidos", "/pedidos"), ("Disponibilidad", "/disponibilidad"), ("Rutas", "/rutas") })),
+        ("/rutas", new("Inventario", new() { ("Disponibilidad", "/disponibilidad"), ("Rutas", "/rutas"), ("Recolecciones", "/recolecciones") })),
+        ("/disponibilidad", new("Inventario", new() { ("Disponibilidad", "/disponibilidad"), ("Rutas", "/rutas"), ("Recolecciones", "/recolecciones") })),
         ("/fabricacion", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
         ("/captura-masiva", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
         ("/incidencias", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
         ("/calidad", new("Calidad", new() { ("Calidad", "/calidad") })),
-        ("/traslados", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas") })),
-        ("/recepcion", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas") })),
-        ("/entregas", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas") })),
+        ("/traslados", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
+        ("/recepcion", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
+        ("/recolecciones", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
+        ("/entregas", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
         ("/piso", new("Planta", new() { ("Báscula", "/piso/bascula") })),
     };
 

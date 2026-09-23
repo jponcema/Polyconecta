@@ -59,6 +59,7 @@ public class ManufacturingOrder
     public DateTime FechaEsperada { get; set; }
     public string State { get; set; } = "Borrador"; // Borrador | Planeado | En progreso | Hecho
     public string? OriginFolio { get; set; }
+    public string PedidoFolio { get; set; } = OperationalFlowState.PedidoFolio;
 
     public List<BomLine> Componentes { get; set; } = new();
     public List<SubProductLine> Subproductos { get; set; } = new();
@@ -98,7 +99,7 @@ public class ShipmentLine
 
 public class InterplantTransferState
 {
-    public string Folio { get; set; } = "18293";
+    public string Folio { get; set; } = "PIM/OUT/48213";
     public string Operacion { get; set; } = "Traspaso PIM a SC";
     public string Origen { get; set; } = "PIM/Stock/PT";
     public string Destino { get; set; } = "SC/Stock/MP";
@@ -130,7 +131,7 @@ public class InterplantTransferState
 /// </summary>
 public class ReceptionState
 {
-    public string Folio { get; set; } = "18293";
+    public string Folio { get; set; } = "SC/IN/50974";
     public string Operacion { get; set; } = "Recepción en almacén";
     public string Origen { get; set; } = "SC/Stock/MP";
     public string Destino { get; set; } = "SC/Stock/PT";
@@ -156,7 +157,7 @@ public class ReceptionState
 
 public class DeliveryState
 {
-    public string Folio { get; set; } = "18294";
+    public string Folio { get; set; } = "SC/OUT/31688";
     public string Operacion { get; set; } = "Entrega a cliente";
     public string Origen { get; set; } = "SC/Stock/PT";
     public string Destino { get; set; } = "EMPRESA MEXICANA DE MANUFACTURA";
@@ -196,7 +197,12 @@ public class Incidencia
 /// </summary>
 public class OperationalFlowState
 {
+    private readonly InventoryState _inv;
+
     public const string PedidoFolio = "IV310-26";
+
+    /// <summary>Clave del producto vendido en el pedido de la demo.</summary>
+    public const string ClaveVendida = "PT1113 C567";
 
     public string CurrentOrderStage { get; private set; } = "Borrador";
     public string OrdenCompraCliente { get; private set; } = "3893";
@@ -205,7 +211,7 @@ public class OperationalFlowState
 
     public List<ProcessCheck> Procesos { get; } = new()
     {
-        new() { Proceso = "Extrusion", Activo = true, Origen = "", Producto = "PT3413 C455" },
+        new() { Proceso = "Extrusion", Activo = true, Origen = "PIM", Producto = "PT3413 C455" },
         new() { Proceso = "Impresion", Activo = true, Origen = "SC", Producto = "PT3413 C4235" },
         new() { Proceso = "Bolseo", Activo = true, Origen = "SC", Producto = "PT3413 C4236" }
     };
@@ -248,7 +254,8 @@ public class OperationalFlowState
             AlmacenFalla = "SC/Scrap",
             FechaEsperada = new DateTime(2026, 9, 23),
             OriginFolio = "BOL-2026-0001",
-            Componentes = { new() { Producto = "ROLLO TUB 20.5 370 (Maestro)", Cantidad = 500, Unidad = "KGS" } },
+            // Consume el producto terminado de la OF anterior (Extrusion): misma clave de PT.
+            Componentes = { new() { Clave = "PT3413 C455", Producto = "ROLLO TUB 20.5 370 (Maestro)", Cantidad = 500, Unidad = "KGS" } },
             Subproductos = { new() { Producto = "Scrap resina residual tpte (BD)", Cantidad = 10, Unidad = "KGS", AlmacenDestino = "SC/Scrap" } },
             Produccion =
             {
@@ -302,6 +309,95 @@ public class OperationalFlowState
         }
     };
 
+    private readonly StockOperationState _ops;
+
+    public OperationalFlowState(InventoryState inv, StockOperationState ops)
+    {
+        _inv = inv;
+        _ops = ops;
+        ManufacturingOrders.AddRange(BuildExtrusionBacklog());
+
+        // Toda OF con componentes nace con su orden de recolección en Borrador.
+        foreach (var of in ManufacturingOrders.Where(o => o.Componentes.Count > 0))
+            _ops.AsegurarRecoleccion(of.Folio, of.Componentes, PlantaDe(of));
+    }
+
+    private static string PlantaDe(ManufacturingOrder of) => of.ProcessType == "Extrusion" ? "PIM" : "SC";
+
+    /// <summary>
+    /// Cartera de ordenes de Extrusion en piso, la que alimenta la Captura Masiva de
+    /// Produccion. Datos fijos (no aleatorios) para que la pantalla sea reproducible.
+    /// Cada orden cuelga de su propio pedido.
+    /// </summary>
+    private static List<ManufacturingOrder> BuildExtrusionBacklog()
+    {
+        // folio, pedido, producto, cantidad, estado, kgs por rollo capturados
+        var seed = new (string Folio, string Pedido, string Producto, decimal Cantidad, string State, decimal[] Rollos)[]
+        {
+            ("EXT-2026-0002", "IV311-26", "ROLLO TUB 18.0 300 (Maestro)",  450m, "En progreso", new[] { 100m, 95m, 105m, 100m, 98m, 102m, 97m, 103m }),
+            ("EXT-2026-0003", "IV312-26", "ROLLO TUB 22.0 400 (Maestro)",  600m, "Planeado",    new[] { 120m, 118m, 121m }),
+            ("EXT-2026-0004", "IV313-26", "ROLLO TUB 20.5 370 (Maestro)",  500m, "En progreso", new[] { 100m, 99m, 101m, 100m, 96m, 104m, 100m, 98m, 102m, 100m, 97m, 103m }),
+            ("EXT-2026-0005", "IV314-26", "ROLLO TUB 16.5 260 (Maestro)",  380m, "Planeado",    new[] { 95m, 92m }),
+            ("EXT-2026-0006", "IV315-26", "ROLLO TUB 24.0 440 (Maestro)",  720m, "En progreso", new[] { 110m, 108m, 112m, 109m, 111m, 107m, 113m, 110m, 106m, 114m, 110m, 109m, 111m, 108m, 112m }),
+            ("EXT-2026-0007", "IV316-26", "ROLLO TUB 20.5 370 (Maestro)",  500m, "Planeado",    new[] { 100m, 98m, 102m, 99m }),
+            ("EXT-2026-0008", "IV317-26", "ROLLO TUB 19.0 320 (Maestro)",  420m, "En progreso", new[] { 105m, 103m, 107m, 104m, 106m, 102m, 108m, 105m, 101m, 109m }),
+            ("EXT-2026-0009", "IV318-26", "ROLLO TUB 21.5 390 (Maestro)",  550m, "Planeado",    new[] { 92m, 90m, 94m, 91m, 93m, 89m }),
+            ("EXT-2026-0010", "IV319-26", "ROLLO TUB 17.5 280 (Maestro)",  340m, "En progreso", new[] { 85m, 83m, 87m, 84m, 86m, 82m, 88m, 85m, 81m, 89m, 85m, 84m, 86m }),
+            ("EXT-2026-0011", "IV320-26", "ROLLO TUB 23.0 420 (Maestro)",  680m, "Planeado",    new[] { 115m, 113m, 117m, 114m, 116m }),
+        };
+
+        return seed.Select((row, idx) => new ManufacturingOrder
+        {
+            Folio = row.Folio,
+            PedidoFolio = row.Pedido,
+            ProcessType = "Extrusion",
+            ProcessLabel = "Extrusión",
+            Producto = row.Producto,
+            Cantidad = row.Cantidad,
+            Unidad = "KGS",
+            TiempoEstimadoHrs = 24,
+            NumeroRollos = row.Rollos.Length,
+            AlmacenFalla = "SC/Scrap",
+            FechaEsperada = new DateTime(2026, 9, 24).AddDays(idx),
+            State = row.State,
+            OriginFolio = null,
+            Componentes =
+            {
+                new() { Clave = "PACT", Producto = "PAC TPTE", Cantidad = Math.Round(row.Cantidad * 0.68m), Unidad = "KGS" },
+                new() { Clave = "GA502022", Producto = "LINEAL BUTENO", Cantidad = Math.Round(row.Cantidad * 0.30m), Unidad = "KGS" },
+                new() { Clave = "MP0032", Producto = "DESLIZANTE ANTIBLOCKBC110", Cantidad = Math.Round(row.Cantidad * 0.02m), Unidad = "KGS" }
+            },
+            Subproductos =
+            {
+                new() { Producto = "Scrap resina residual tpte (BD)", Cantidad = 10, Unidad = "KGS", AlmacenDestino = "SC/Scrap" }
+            },
+            Produccion = row.Rollos
+                .Select((kg, i) => new ProductionLot
+                {
+                    Lote = $"R{i + 1:000}-{row.Pedido}",
+                    Real = kg,
+                    Unidad = "KGS",
+                    Estado = "Aprobado"
+                })
+                .ToList(),
+            Planeacion =
+            {
+                new()
+                {
+                    CentroTrabajo = $"COEXT-{(idx % 3) + 1:000}",
+                    Producto = row.Producto,
+                    Cantidad = row.Cantidad,
+                    Unidad = "KGS",
+                    HorasAsignadas = 24,
+                    FechaInicio = new DateTime(2026, 9, 24).AddDays(idx),
+                    FechaFin = new DateTime(2026, 9, 24).AddDays(idx + 1),
+                    Operador = "Alejandro Varela"
+                }
+            },
+            SequenceCounter = row.Rollos.Length
+        }).ToList();
+    }
+
     public InterplantTransferState Traslado { get; } = new();
     public ReceptionState Recepcion { get; } = new();
     public DeliveryState Entrega { get; } = new();
@@ -316,11 +412,58 @@ public class OperationalFlowState
 
     public void SetOrderStage(string stage) { CurrentOrderStage = stage; Notify(); }
 
-    public void AutorizarManufactura()
+    public decimal CantidadPedido { get; set; } = 5500m;
+
+    // ------------------------------------------------------------- autorización de dos firmas
+
+    /// <summary>Roles que pueden firmar la autorización. Un único botón para ambos.</summary>
+    public static readonly string[] RolesAutorizadores = { "Comercial", "Cobranza" };
+
+    /// <summary>Rol con el que se está operando la demo.</summary>
+    public string RolActivo { get; set; } = "Comercial";
+
+    /// <summary>Firmas recogidas: rol -> quién firmó.</summary>
+    public Dictionary<string, string> Firmas { get; } = new();
+
+    public bool PuedeFirmar => CurrentOrderStage == "Confirmado"
+                               && RolesAutorizadores.Contains(RolActivo)
+                               && !Firmas.ContainsKey(RolActivo);
+
+    public bool YaFirmoRolActivo => Firmas.ContainsKey(RolActivo);
+    public int FirmasRecogidas => Firmas.Count;
+    public string? FirmaPendiente => RolesAutorizadores.FirstOrDefault(r => !Firmas.ContainsKey(r));
+
+    /// <summary>Plan que el motor generó al completarse la segunda firma.</summary>
+    public ProcurementPlan? PlanEjecutado { get; private set; }
+
+    /// <summary>
+    /// Botón único de Autorizar: registra la firma del rol activo. Con las dos firmas el pedido pasa a
+    /// Autorizado y es entonces cuando el motor de rutas genera los documentos.
+    /// Supersede los botones separados de Ventas y Crédito de SPEC-001.
+    /// </summary>
+    public void Autorizar(ProcurementState procurement)
     {
-        if (CurrentOrderStage == "Confirmado") CurrentOrderStage = "Autorizado";
+        if (!PuedeFirmar) { Notify(); return; }
+
+        Firmas[RolActivo] = RolActivo == "Comercial" ? Agente : "Crédito y Cobranza";
+
+        if (Firmas.Count < RolesAutorizadores.Length) { Notify(); return; }
+
+        CurrentOrderStage = "Autorizado";
+        PlanEjecutado = procurement.Planificar(ClaveVendida, CantidadPedido, PedidoFolio, simular: false);
         Notify();
     }
+
+    public void RevocarFirmas()
+    {
+        Firmas.Clear();
+        PlanEjecutado = null;
+        _inv.LiberarReservasDe(PedidoFolio);
+        if (CurrentOrderStage == "Autorizado") CurrentOrderStage = "Confirmado";
+        Notify();
+    }
+
+    public void LiberarReservasPedido() => _inv.LiberarReservasDe(PedidoFolio);
 
     public ManufacturingOrder? GetOrder(string folio) => ManufacturingOrders.FirstOrDefault(o => o.Folio == folio);
 
@@ -338,12 +481,16 @@ public class OperationalFlowState
         var of = GetOrder(folio);
         if (of == null) return;
         of.Componentes.Add(new BomLine { Clave = clave, Producto = producto, Cantidad = cantidad, Unidad = unidad });
+        _ops.AsegurarRecoleccion(folio, of.Componentes, PlantaDe(of));
         Notify();
     }
 
     public void QuitarComponente(string folio, BomLine line)
     {
-        GetOrder(folio)?.Componentes.Remove(line);
+        var of = GetOrder(folio);
+        if (of == null) return;
+        of.Componentes.Remove(line);
+        _ops.AsegurarRecoleccion(folio, of.Componentes, PlantaDe(of));
         Notify();
     }
 
@@ -352,6 +499,8 @@ public class OperationalFlowState
         var of = GetOrder(folio);
         if (of == null || of.Componentes.Count == 0) return; // guard: FR-004 (requiere componentes)
         of.State = "Planeado";
+        // Confirmar la OF libera su recolección a Almacén.
+        _ops.ConfirmarRecoleccion(folio);
         Notify();
     }
 

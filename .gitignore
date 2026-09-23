@@ -7,6 +7,9 @@ packages/
 *.userosscache
 *.sln.docstates
 
+## Node (scripts de automatizacion)
+node_modules/
+
 ## Universal
 .DS_Store
 Thumbs.db
@@ -16,3 +19,6 @@ Thumbs.db
 .idea/
 *.log
 .env*
+
+./scripts/screenshots/
+scripts/screenshots/package-lock.json

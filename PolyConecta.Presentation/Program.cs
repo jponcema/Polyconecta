@@ -14,6 +14,9 @@ builder.Services.AddSignalR();
 
 builder.Services.AddScoped<UiViewState>();
 builder.Services.AddScoped<OperationalFlowState>();
+builder.Services.AddScoped<InventoryState>();
+builder.Services.AddScoped<StockOperationState>();
+builder.Services.AddScoped<ProcurementState>();
 
 var app = builder.Build();
 

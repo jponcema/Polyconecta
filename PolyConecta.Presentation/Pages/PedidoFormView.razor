@@ -1,5 +1,6 @@
 @page "/pedidos/{Folio}"
 @inject OperationalFlowState Flow
+@inject ProcurementState Procurement
 @inject NavigationManager NavManager
 @implements IDisposable
 
@@ -16,34 +17,66 @@
 </div>
 
 <div class="p-4">
-    <div class="d-flex gap-3 align-items-start">
-        <div class="o_form_sheet flex-grow-1">
-            <!-- Barra de acciones + statusbar: acoplada al techo de la hoja, no flotando en la página -->
-            <div class="o_statusbar">
+    <div class="o_statusbar">
+        <div class="d-flex align-items-center gap-2">
+            @switch (Flow.CurrentOrderStage)
+            {
+                case "Borrador":
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick='() => Flow.SetOrderStage("Confirmado")'>
+                        <i class="bi bi-check-circle me-1"></i> Confirmar
+                    </button>
+                    break;
+                case "Confirmado":
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.Autorizar(Procurement)"
+                            disabled="@(Flow.PuedeFirmar ? null : "disabled")"
+                            title="@(Flow.YaFirmoRolActivo ? $"{Flow.RolActivo} ya firmó" : "Registra su firma de autorización")">
+                        <i class="bi bi-check-circle me-1"></i> Autorizar
+                        <span class="badge bg-light text-dark ms-1">@Flow.FirmasRecogidas/2</span>
+                    </button>
+                    break;
+            }
+            @if (Flow.CurrentOrderStage != "Hecho")
+            {
+                <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/pedidos")'>Cancelar</button>
+            }
+            @if (Flow.CurrentOrderStage == "Autorizado")
+            {
+                <button class="btn btn-outline-danger btn-sm px-3" @onclick="() => Flow.RevocarFirmas()"
+                        title="Revierte las firmas, libera las reservas y descarta los documentos generados">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Revocar autorización
+                </button>
+            }
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            @if (Flow.CurrentOrderStage is "Confirmado" or "Autorizado")
+            {
                 <div class="d-flex align-items-center gap-2">
-                    @switch (Flow.CurrentOrderStage)
+                    @foreach (var rol in OperationalFlowState.RolesAutorizadores)
                     {
-                        case "Borrador":
-                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick='() => Flow.SetOrderStage("Confirmado")'>
-                                <i class="bi bi-check-circle me-1"></i> Confirmar
-                            </button>
-                            break;
-                        case "Confirmado":
-                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.AutorizarManufactura()">
-                                <i class="bi bi-check-circle me-1"></i> Autorizar Manufactura
-                            </button>
-                            break;
-                    }
-                    @if (Flow.CurrentOrderStage != "Hecho")
-                    {
-                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/pedidos")'>Cancelar</button>
+                        var firmado = Flow.Firmas.TryGetValue(rol, out var quien);
+                        <span class="badge @(firmado ? "bg-success-subtle text-success-emphasis" : "bg-secondary-subtle text-secondary-emphasis") px-2 py-1"
+                              title="@(firmado ? $"Firmado por {quien}" : "Pendiente de firma")">
+                            <i class="bi @(firmado ? "bi-check-circle-fill" : "bi-hourglass") me-1"></i>@rol
+                        </span>
                     }
                 </div>
-
-                <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.CurrentOrderStage" />
+            }
+            <div class="d-flex align-items-center gap-2">
+                <span class="small text-muted">Operando como</span>
+                <select class="form-select form-select-sm" style="width:150px;" @bind="RolSeleccionado">
+                    <option value="Atención a Clientes">Atención a Clientes</option>
+                    <option value="Comercial">Comercial</option>
+                    <option value="Cobranza">Cobranza</option>
+                </select>
             </div>
+        </div>
+    </div>
 
+    <div class="d-flex gap-3 align-items-start">
+        <div class="o_form_sheet flex-grow-1">
             <div class="o_sheet_body">
+                <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.CurrentOrderStage" />
                 <PocSalesOrderForm />
             </div>
         </div>
@@ -56,11 +89,39 @@
 
     private static readonly List<string> Stages = new() { "Borrador", "Confirmado", "Autorizado", "En progreso", "Hecho" };
 
-    private List<OdooSmartButtons.SmartButtonModel> SmartButtons => new()
+    private string RolSeleccionado
     {
-        new() { Label = "Entrega", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = "/entregas/18294" },
-        new() { Label = "Fabricación", CountBadge = 1, IconClass = "bi bi-diagram-3", TargetRoute = "/fabricacion/BOL-2026-0001" }
-    };
+        get => Flow.RolActivo;
+        set => Flow.RolActivo = value;
+    }
+
+    // Los smart buttons reflejan lo que el motor generó, no una lista fija.
+    private List<OdooSmartButtons.SmartButtonModel> SmartButtons
+    {
+        get
+        {
+            var plan = Flow.PlanEjecutado;
+            if (plan == null)
+                return new()
+                {
+                    new() { Label = "Entrega", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = $"/entregas/{Flow.Entrega.Folio}" },
+                    new() { Label = "Fabricación", CountBadge = 1, IconClass = "bi bi-diagram-3", TargetRoute = "/fabricacion/BOL-2026-0001" }
+                };
+
+            var lista = new List<OdooSmartButtons.SmartButtonModel>();
+            var entregas = plan.Documentos.Count(d => d.Accion == ProcurementAction.EntregarDeStock && d.Nivel == 1);
+            var fabricaciones = plan.Documentos.Count(d => d.Accion == ProcurementAction.Fabricar);
+            var traslados = plan.Documentos.Count(d => d.Accion == ProcurementAction.TraspasarDeOtraPlanta);
+
+            if (entregas > 0)
+                lista.Add(new() { Label = "Entrega", CountBadge = entregas, IconClass = "bi bi-truck", TargetRoute = $"/entregas/{Flow.Entrega.Folio}" });
+            if (fabricaciones > 0)
+                lista.Add(new() { Label = "Fabricación", CountBadge = fabricaciones, IconClass = "bi bi-diagram-3", TargetRoute = "/fabricacion/BOL-2026-0001" });
+            if (traslados > 0)
+                lista.Add(new() { Label = "Traslado", CountBadge = traslados, IconClass = "bi bi-arrow-left-right", TargetRoute = $"/traslados/{Flow.Traslado.Folio}" });
+            return lista;
+        }
+    }
 
     private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
     {
