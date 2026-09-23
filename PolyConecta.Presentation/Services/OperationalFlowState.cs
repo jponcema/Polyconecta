@@ -433,15 +433,12 @@ public class OperationalFlowState
     public int FirmasRecogidas => Firmas.Count;
     public string? FirmaPendiente => RolesAutorizadores.FirstOrDefault(r => !Firmas.ContainsKey(r));
 
-    /// <summary>Plan que el motor generó al completarse la segunda firma.</summary>
-    public ProcurementPlan? PlanEjecutado { get; private set; }
-
     /// <summary>
     /// Botón único de Autorizar: registra la firma del rol activo. Con las dos firmas el pedido pasa a
     /// Autorizado y es entonces cuando el motor de rutas genera los documentos.
     /// Supersede los botones separados de Ventas y Crédito de SPEC-001.
     /// </summary>
-    public void Autorizar(ProcurementState procurement)
+    public void Autorizar()
     {
         if (!PuedeFirmar) { Notify(); return; }
 
@@ -450,14 +447,12 @@ public class OperationalFlowState
         if (Firmas.Count < RolesAutorizadores.Length) { Notify(); return; }
 
         CurrentOrderStage = "Autorizado";
-        PlanEjecutado = procurement.Planificar(ClaveVendida, CantidadPedido, PedidoFolio, simular: false);
         Notify();
     }
 
     public void RevocarFirmas()
     {
         Firmas.Clear();
-        PlanEjecutado = null;
         _inv.LiberarReservasDe(PedidoFolio);
         if (CurrentOrderStage == "Autorizado") CurrentOrderStage = "Confirmado";
         Notify();
