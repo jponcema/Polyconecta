@@ -606,3 +606,119 @@ body {
         border-radius: 4px;
     }
 }
+
+/* ── Zona de captura de línea ──────────────────────────────────────────────
+   Delimita visualmente el área de alta dentro de cada pestaña: se distingue
+   del grid de registros ya capturados sin competir con él. */
+.o_line_capture {
+    background: #F7F9FB;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    padding: 0.65rem 0.75rem 0.75rem;
+}
+
+.o_line_capture_title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+/* Colapso del breadcrumb: "…" se comporta como un eslabón más de la ruta. */
+.o_breadcrumb_more {
+    background: none;
+    border: 0;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* ── Facetas de la barra de búsqueda ──────────────────────────────────────
+   Un filtro aplicado se muestra aquí, no junto al breadcrumb: la ruta dice
+   dónde estoy; la barra de búsqueda, qué estoy viendo. */
+.o_search_facet {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--brand-primary, #017E84);
+    border-radius: 4px;
+    overflow: hidden;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    white-space: nowrap;
+    margin-right: 0.35rem;
+}
+
+.o_search_facet_field {
+    background: var(--brand-primary, #017E84);
+    color: white;
+    padding: 0 0.4rem;
+    font-weight: 600;
+}
+
+.o_search_facet_value {
+    padding: 0 0.4rem;
+    color: var(--text-color, #1f2937);
+}
+
+.o_search_facet_remove {
+    background: none;
+    border: 0;
+    padding: 0 0.3rem 0 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+}
+
+.o_search_facet_remove:hover { color: #b02a37; }
+
+/* ── Menú de filtros de la vista de búsqueda ──────────────────────────────── */
+.o_search_menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 30;
+    min-width: 260px;
+    max-height: 380px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    padding: 0.35rem 0;
+}
+
+.o_search_menu_title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    padding: 0.35rem 0.75rem;
+}
+
+.o_search_menu_group {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0.4rem 0.75rem 0.15rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.2rem;
+}
+
+.o_search_menu_item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    background: none;
+    border: 0;
+    text-align: left;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.o_search_menu_item:hover { background: #F2F6F9; }
+.o_search_menu_item.active { color: var(--brand-primary, #017E84); font-weight: 600; }

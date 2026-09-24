@@ -10,7 +10,10 @@
         </button>
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Control de Calidad") })" />
     </div>
-    <OdooSearchBox @bind-Value="searchText" />
+    <OdooSearchPanel TItem="ManufacturingOrder"
+                     View="@SearchViews.Calidad"
+                     @bind-Texto="searchText"
+                     @bind-FiltrosActivos="filtros" />
     <div class="d-flex align-items-center gap-2">
         <div class="btn-group btn-group-sm o_view_switcher">
             <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
@@ -52,11 +55,10 @@
 @code {
     private string searchText = "";
     private readonly HashSet<string> selected = new();
-    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders.Where(o => o.CalidadRequerida
-        && (string.IsNullOrWhiteSpace(searchText)
-            || QcFolio(o).Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase))).ToList();
+    private List<string> filtros = new();
+
+    private List<ManufacturingOrder> FilteredOrders => SearchViews.Calidad.Aplicar(
+        Flow.ManufacturingOrders.Where(o => o.CalidadRequerida), searchText, filtros);
 
     private void ToggleOne(string folio)
     {

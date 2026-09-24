@@ -79,6 +79,17 @@ public class QualityControlState
     public string ProcessLabel { get; set; } = "";
 }
 
+/// <summary>Línea del pedido de venta. Misma forma que las demás líneas capturables.</summary>
+public class SalesOrderLine
+{
+    public string Clave { get; set; } = "";
+    public string Producto { get; set; } = "";
+    public decimal Cantidad { get; set; }
+    public string Unidad { get; set; } = "";
+    public decimal PrecioUnitario { get; set; }
+    public decimal Subtotal => Cantidad * PrecioUnitario;
+}
+
 public class ProcessCheck
 {
     public string Proceso { get; set; } = "";
@@ -208,6 +219,44 @@ public class OperationalFlowState
     public string OrdenCompraCliente { get; private set; } = "3893";
     public string Agente { get; private set; } = "Celia Villarreal";
     public string ContpaqId { get; private set; } = "26200";
+
+    /// <summary>Lista de precios mock: el precio se precarga al capturar la clave.</summary>
+    private static readonly Dictionary<string, decimal> ListaPrecios = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["PT1113 C567"] = 5.70m,
+        ["PT1113 C580"] = 4.20m,
+        ["PT3413 C4235"] = 62.50m,
+        ["PT3413 C455"] = 48.00m,
+        ["PT3413 C460"] = 49.50m,
+        ["PT3413 C470"] = 45.00m
+    };
+
+    public decimal PrecioDe(string clave) =>
+        !string.IsNullOrWhiteSpace(clave) && ListaPrecios.TryGetValue(clave.Trim(), out var p) ? p : 0m;
+
+    public List<SalesOrderLine> PedidoLineas { get; } = new()
+    {
+        new() { Clave = "PT1113 C567", Producto = "BOLSA MEDIANA 44X84 C.430 BOL-004 [77]", Cantidad = 5500m, Unidad = "PZA", PrecioUnitario = 5.70m }
+    };
+
+    public void AgregarLineaPedido(string clave, string producto, decimal cantidad, string unidad)
+    {
+        PedidoLineas.Add(new SalesOrderLine
+        {
+            Clave = clave,
+            Producto = string.IsNullOrWhiteSpace(producto) ? clave : producto,
+            Cantidad = cantidad,
+            Unidad = unidad,
+            PrecioUnitario = PrecioDe(clave)
+        });
+        Notify();
+    }
+
+    public void QuitarLineaPedido(SalesOrderLine linea)
+    {
+        PedidoLineas.Remove(linea);
+        Notify();
+    }
 
     public List<ProcessCheck> Procesos { get; } = new()
     {
@@ -416,33 +465,30 @@ public class OperationalFlowState
 
     // ------------------------------------------------------------- autorización de dos firmas
 
-    /// <summary>Roles que pueden firmar la autorización. Un único botón para ambos.</summary>
+    /// <summary>Roles que deben firmar la autorización. Un único botón para ambos.</summary>
     public static readonly string[] RolesAutorizadores = { "Comercial", "Cobranza" };
-
-    /// <summary>Rol con el que se está operando la demo.</summary>
-    public string RolActivo { get; set; } = "Comercial";
 
     /// <summary>Firmas recogidas: rol -> quién firmó.</summary>
     public Dictionary<string, string> Firmas { get; } = new();
 
-    public bool PuedeFirmar => CurrentOrderStage == "Confirmado"
-                               && RolesAutorizadores.Contains(RolActivo)
-                               && !Firmas.ContainsKey(RolActivo);
-
-    public bool YaFirmoRolActivo => Firmas.ContainsKey(RolActivo);
     public int FirmasRecogidas => Firmas.Count;
     public string? FirmaPendiente => RolesAutorizadores.FirstOrDefault(r => !Firmas.ContainsKey(r));
+    public bool PuedeFirmar => CurrentOrderStage == "Confirmado" && FirmaPendiente != null;
 
     /// <summary>
-    /// Botón único de Autorizar: registra la firma del rol activo. Con las dos firmas el pedido pasa a
-    /// Autorizado y es entonces cuando el motor de rutas genera los documentos.
-    /// Supersede los botones separados de Ventas y Crédito de SPEC-001.
+    /// Botón único de Autorizar: registra la firma del rol pendiente. Con las dos firmas el pedido
+    /// pasa a Autorizado. Supersede los botones separados de Ventas y Crédito de SPEC-001.
+    ///
+    /// Sin gestión de sesión todavía, la firma se atribuye al siguiente rol pendiente. Cuando exista
+    /// el modelo de usuarios y roles (SPEC-009), firmará el rol del usuario autenticado y el botón
+    /// quedará deshabilitado para quien no sea autorizador o ya haya firmado.
     /// </summary>
     public void Autorizar()
     {
         if (!PuedeFirmar) { Notify(); return; }
 
-        Firmas[RolActivo] = RolActivo == "Comercial" ? Agente : "Crédito y Cobranza";
+        var rol = FirmaPendiente!;
+        Firmas[rol] = rol == "Comercial" ? Agente : "Crédito y Cobranza";
 
         if (Firmas.Count < RolesAutorizadores.Length) { Notify(); return; }
 
@@ -462,6 +508,10 @@ public class OperationalFlowState
 
     public ManufacturingOrder? GetOrder(string folio) => ManufacturingOrders.FirstOrDefault(o => o.Folio == folio);
 
+    /// <summary>Órdenes de fabricación de un pedido: de 1 a 3 según la especificación del producto.</summary>
+    public IReadOnlyList<ManufacturingOrder> OrdenesDePedido(string pedidoFolio) =>
+        ManufacturingOrders.Where(o => o.PedidoFolio == pedidoFolio).ToList();
+
     public IReadOnlyList<ManufacturingOrder> GetSecondaries(string folio) =>
         ManufacturingOrders.Where(o => o.OriginFolio == folio).ToList();
 
@@ -477,6 +527,49 @@ public class OperationalFlowState
         if (of == null) return;
         of.Componentes.Add(new BomLine { Clave = clave, Producto = producto, Cantidad = cantidad, Unidad = unidad });
         _ops.AsegurarRecoleccion(folio, of.Componentes, PlantaDe(of));
+        Notify();
+    }
+
+    public void AgregarSubproducto(string folio, string clave, string producto, decimal cantidad, string unidad)
+    {
+        var of = GetOrder(folio);
+        if (of == null) return;
+        of.Subproductos.Add(new SubProductLine
+        {
+            Clave = clave,
+            Producto = producto,
+            Cantidad = cantidad,
+            Unidad = unidad,
+            AlmacenDestino = of.AlmacenFalla
+        });
+        Notify();
+    }
+
+    public void QuitarSubproducto(string folio, SubProductLine line)
+    {
+        GetOrder(folio)?.Subproductos.Remove(line);
+        Notify();
+    }
+
+    /// <summary>Alta manual de un lote producido. El lote va en el primer campo de la captura.</summary>
+    public void AgregarLoteProduccion(string folio, string lote, decimal real, string unidad)
+    {
+        var of = GetOrder(folio);
+        if (of == null) return;
+        of.Produccion.Add(new ProductionLot
+        {
+            Lote = lote,
+            Real = real,
+            Unidad = string.IsNullOrWhiteSpace(unidad) ? of.Unidad : unidad,
+            Estado = of.CalidadRequerida ? "En revisión" : "Aprobado"
+        });
+        of.SequenceCounter = Math.Max(of.SequenceCounter, of.Produccion.Count);
+        Notify();
+    }
+
+    public void QuitarLoteProduccion(string folio, ProductionLot lote)
+    {
+        GetOrder(folio)?.Produccion.Remove(lote);
         Notify();
     }
 

@@ -12,12 +12,6 @@ public interface IP2PValidationService
 
 /// <summary>
 /// Domain service for Order-to-Cash (O2C) 3-digital signatures workflow.
-/// </summary>
-public interface IO2CApprovalService
-{
-    Task<bool> ValidateWorkflowSignaturesAsync(MasterOrder order, string role, string userId, CancellationToken cancellationToken = default);
-}
-
 /// <summary>
 /// Domain service interface for queuing CONTPAQi ERP transactions.
 /// </summary>

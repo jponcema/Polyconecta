@@ -1,0 +1,143 @@
+@*
+    Captura de línea homologada para todos los grids:
+    [Clave / Producto] [Cantidad] [Unidad] [Agregar]
+
+    El primer campo unifica clave y descripción: se escribe la clave (o parte del nombre) y,
+    si el producto existe en el catálogo de CONTPAQi, la unidad se precarga sola.
+*@
+<div class="o_line_capture mb-3">
+    <div class="o_line_capture_title">Captura</div>
+    <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-6">
+        <input class="form-control form-control-sm o_inline_input @(Resuelto ? "border-primary-subtle" : "")"
+               list="@ListId"
+               placeholder="@Placeholder"
+               value="@Texto"
+               @onchange="OnClaveChanged"
+               title="@(Resuelto ? "Producto confirmado del catálogo de CONTPAQi" : Placeholder)" />
+    </div>
+    <div class="col-6 col-md-2">
+        <input type="number" step="0.1" class="form-control form-control-sm o_inline_input"
+               placeholder="Cantidad" value="@(Draft.Cantidad == 0 ? "" : Draft.Cantidad.ToString())" @onchange="OnCantidadChanged" />
+    </div>
+    <div class="col-6 col-md-2">
+        <input class="form-control form-control-sm o_inline_input"
+               placeholder="Unidad" value="@Draft.Unidad" @onchange="OnUnidadChanged"
+               title="@(UnidadPrecargada ? "Precargada desde el catálogo de CONTPAQi" : "Capture la unidad")" />
+    </div>
+    <div class="col-12 col-md-2 d-flex gap-1">
+        <button class="btn btn-sm btn-primary flex-grow-1" @onclick="Submit" disabled="@(Valido ? null : "disabled")">
+            <i class="bi @(EnEdicion ? "bi-check-lg" : "bi-plus-lg")"></i> @(EnEdicion ? "Guardar" : "Agregar")
+        </button>
+        @if (EnEdicion)
+        {
+            <button class="btn btn-sm btn-light border" title="Cancelar" @onclick="() => OnCancel.InvokeAsync()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        }
+        </div>
+    </div>
+</div>
+
+@if (Catalogo.Count > 0)
+{
+    <datalist id="@ListId">
+        @foreach (var p in Catalogo)
+        {
+            <option value="@p.Clave">@p.Nombre</option>
+        }
+    </datalist>
+}
+
+@code {
+    public class LineDraft
+    {
+        public string Clave { get; set; } = "";
+        public string Producto { get; set; } = "";
+        public decimal Cantidad { get; set; }
+        public string Unidad { get; set; } = "";
+
+        public LineDraft Clone() => new() { Clave = Clave, Producto = Producto, Cantidad = Cantidad, Unidad = Unidad };
+        public void Clear() { Clave = ""; Producto = ""; Cantidad = 0; Unidad = ""; }
+    }
+
+    [Parameter] public LineDraft Draft { get; set; } = new();
+    [Parameter] public EventCallback<LineDraft> DraftChanged { get; set; }
+
+    /// <summary>Catálogo para autocompletar y precargar la unidad. Vacío = captura libre.</summary>
+    [Parameter] public List<ProductRef> Catalogo { get; set; } = new();
+
+    /// <summary>Unidad cuando el producto no está en el catálogo (p. ej. la unidad de la orden).</summary>
+    [Parameter] public string? UnidadPorDefecto { get; set; }
+
+    [Parameter] public string Placeholder { get; set; } = "Clave / Producto";
+    [Parameter] public bool EnEdicion { get; set; }
+    [Parameter] public EventCallback<LineDraft> OnSubmit { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private readonly string ListId = "cat-" + Guid.NewGuid().ToString("N")[..8];
+
+    private bool UnidadPrecargada;
+
+    /// <summary>Confirmado contra el catálogo: el campo se sobrescribe con clave + descripción.</summary>
+    private bool Resuelto => !string.IsNullOrWhiteSpace(Draft.Producto);
+
+    private const string Separador = " — ";
+
+    /// <summary>Lo que se ve en el campo: la confirmación reemplaza a lo tecleado.</summary>
+    private string Texto => Resuelto ? Draft.Clave + Separador + Draft.Producto : Draft.Clave;
+
+    private bool Valido => !string.IsNullOrWhiteSpace(Draft.Clave) && Draft.Cantidad > 0;
+
+    private async Task OnClaveChanged(ChangeEventArgs e)
+    {
+        var texto = e.Value?.ToString()?.Trim() ?? "";
+
+        // Si viene ya confirmado ("CLAVE — Descripción"), la clave es lo anterior al separador.
+        var corte = texto.IndexOf(Separador, StringComparison.Ordinal);
+        if (corte > 0) texto = texto[..corte].Trim();
+
+        Draft.Clave = texto;
+
+        // Resolución contra el catálogo: por clave exacta primero, luego por nombre.
+        var prod = Catalogo.FirstOrDefault(p => string.Equals(p.Clave, texto, StringComparison.OrdinalIgnoreCase))
+                ?? Catalogo.FirstOrDefault(p => p.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase) && texto.Length > 2);
+
+        if (prod != null)
+        {
+            Draft.Clave = prod.Clave;
+            Draft.Producto = prod.Nombre;
+            Draft.Unidad = prod.Unidad;      // precargada desde CONTPAQi
+            UnidadPrecargada = true;
+        }
+        else
+        {
+            Draft.Producto = "";
+            UnidadPrecargada = false;
+            if (string.IsNullOrWhiteSpace(Draft.Unidad) && !string.IsNullOrWhiteSpace(UnidadPorDefecto))
+                Draft.Unidad = UnidadPorDefecto;
+        }
+        await DraftChanged.InvokeAsync(Draft);
+    }
+
+    private async Task OnCantidadChanged(ChangeEventArgs e)
+    {
+        Draft.Cantidad = decimal.TryParse(e.Value?.ToString(), out var c) ? c : 0;
+        await DraftChanged.InvokeAsync(Draft);
+    }
+
+    private async Task OnUnidadChanged(ChangeEventArgs e)
+    {
+        Draft.Unidad = e.Value?.ToString() ?? "";
+        UnidadPrecargada = false;
+        await DraftChanged.InvokeAsync(Draft);
+    }
+
+    private async Task Submit()
+    {
+        if (!Valido) return;
+        if (string.IsNullOrWhiteSpace(Draft.Unidad) && !string.IsNullOrWhiteSpace(UnidadPorDefecto))
+            Draft.Unidad = UnidadPorDefecto;
+        await OnSubmit.InvokeAsync(Draft.Clone());
+    }
+}

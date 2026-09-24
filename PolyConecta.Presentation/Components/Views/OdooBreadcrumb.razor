@@ -1,11 +1,26 @@
+@*
+    Breadcrumb con colapso: muestra el nivel actual y uno hacia atrás; lo anterior se
+    resume en "…", que despliega la ruta completa al pulsarlo.
+*@
 <nav class="d-flex align-items-center gap-2 o_breadcrumb">
-    @for (var i = 0; i < Items.Count; i++)
+    @if (HayOcultos && !Expandido)
+    {
+        <button type="button" class="parent-item o_breadcrumb_more" title="@TituloOcultos" @onclick="() => Expandido = true">…</button>
+        <i class="bi bi-chevron-right text-muted small"></i>
+    }
+
+    @for (var i = Desde; i < Items.Count; i++)
     {
         var item = Items[i];
         var isLast = i == Items.Count - 1;
         @if (!isLast && item.Url is not null)
         {
             <a href="@item.Url" class="parent-item">@item.Label</a>
+            <i class="bi bi-chevron-right text-muted small"></i>
+        }
+        else if (!isLast)
+        {
+            <span class="parent-item text-muted">@item.Label</span>
             <i class="bi bi-chevron-right text-muted small"></i>
         }
         else
@@ -19,4 +34,18 @@
     public record Crumb(string Label, string? Url = null);
 
     [Parameter] public List<Crumb> Items { get; set; } = new();
+
+    /// <summary>Niveles visibles sin colapsar: el actual y uno hacia atrás.</summary>
+    [Parameter] public int MaxVisible { get; set; } = 2;
+
+    private bool Expandido;
+
+    private bool HayOcultos => Items.Count > MaxVisible;
+
+    private int Desde => HayOcultos && !Expandido ? Items.Count - MaxVisible : 0;
+
+    private string TituloOcultos =>
+        "Mostrar ruta completa: " + string.Join(" › ", Items.Take(Items.Count - MaxVisible).Select(i => i.Label));
+
+    protected override void OnParametersSet() => Expandido = false;
 }

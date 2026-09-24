@@ -1,4 +1,5 @@
 @inject OperationalFlowState Flow
+@inject InventoryState Inv
 <div>
     <h3 class="fw-bold mb-1">Pedido</h3>
     <h4 class="fw-bold text-primary mb-3">@OperationalFlowState.PedidoFolio</h4>
@@ -43,39 +44,49 @@
         <li class="nav-item"><button class="nav-link active">Detalle</button></li>
     </ul>
     <div class="mb-4">
+        @if (PedidoAbierto)
+        {
+            <OdooLineCapture Draft="@draftLinea" Catalogo="@Inv.Catalogo" OnSubmit="AgregarLinea" />
+        }
         <table class="table align-middle mb-0">
             <thead>
                 <tr class="text-muted small">
-                    <th>Clave</th>
+                    <th style="width:15%;">Clave</th>
                     <th>Producto</th>
-                    <th class="text-end" style="width: 100px;">Cantidad</th>
-                    <th style="width: 90px;">Unidad</th>
+                    <th class="text-center" style="width: 110px;">Cantidad</th>
+                    <th class="text-center" style="width: 80px;">Unidad</th>
                     <th class="text-end" style="width: 140px;">Precio Unitario</th>
                     <th class="text-end" style="width: 110px;">Subtotal</th>
+                    <th class="text-center" style="width: 88px;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="fw-semibold text-primary">PT1113 C567</td>
-                    <td class="small">
-                        BOLSA MEDIANA 44X84 C.430 BOL-004 [77]
-                        <button class="btn btn-sm btn-link p-0 ms-1" title="Ficha técnica" @onclick="() => ShowFichaTecnica = true">
-                            <i class="bi bi-file-text"></i>
-                        </button>
-                    </td>
-                    <td class="text-end">
-                        <input type="number" class="form-control form-control-sm text-end d-inline-block o_inline_input" style="width: 90px;" @bind="RequestedQty" />
-                    </td>
-                    <td>
-                        <select class="form-select form-select-sm o_inline_input" @bind="RequestedUom">
-                            <option value="PZA">PZA</option>
-                            <option value="KG">KG</option>
-                            <option value="MIL">MIL</option>
-                        </select>
-                    </td>
-                    <td class="text-end text-muted">$@UnitPrice.ToString("N2")</td>
-                    <td class="text-end fw-semibold">$@((RequestedQty * UnitPrice).ToString("N2"))</td>
-                </tr>
+                @foreach (var linea in Flow.PedidoLineas.ToList())
+                {
+                    <tr>
+                        <td class="fw-semibold text-primary small">@linea.Clave</td>
+                        <td class="small">
+                            @linea.Producto
+                            <button class="btn btn-sm btn-link p-0 ms-1" title="Ficha técnica" @onclick="() => ShowFichaTecnica = true">
+                                <i class="bi bi-file-text"></i>
+                            </button>
+                        </td>
+                        <td class="text-center">@linea.Cantidad.ToString("N1")</td>
+                        <td class="text-center small text-muted">@linea.Unidad</td>
+                        <td class="text-end text-muted">$@linea.PrecioUnitario.ToString("N2")</td>
+                        <td class="text-end fw-semibold">$@linea.Subtotal.ToString("N2")</td>
+                        <td class="text-center text-nowrap">
+                            <button class="btn btn-sm btn-link p-0 me-2" title="@(PedidoAbierto ? "Editar" : "El pedido ya fue autorizado")"
+                                    disabled="@(PedidoAbierto ? null : "disabled")" @onclick="() => EditarLinea(linea)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-link text-danger p-0" title="@(PedidoAbierto ? "Eliminar" : "El pedido ya fue autorizado")"
+                                    disabled="@(PedidoAbierto ? null : "disabled")" @onclick="() => Flow.QuitarLineaPedido(linea)">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
             </tbody>
         </table>
         <div class="row">
@@ -167,7 +178,24 @@
     private bool ShowFichaTecnica = false;
     private string Tab = "detalle";
 
-    private decimal Subtotal => RequestedQty * UnitPrice;
+    private OdooLineCapture.LineDraft draftLinea = new();
+
+    /// <summary>Autorizado en adelante el pedido ya generó documentos: sus líneas quedan cerradas.</summary>
+    private bool PedidoAbierto => Flow.CurrentOrderStage is "Borrador" or "Confirmado";
+
+    private void EditarLinea(SalesOrderLine linea)
+    {
+        draftLinea = new() { Clave = linea.Clave, Producto = linea.Producto, Cantidad = linea.Cantidad, Unidad = linea.Unidad };
+        Flow.QuitarLineaPedido(linea);
+    }
+
+    private void AgregarLinea(OdooLineCapture.LineDraft d)
+    {
+        Flow.AgregarLineaPedido(d.Clave, d.Producto, d.Cantidad, d.Unidad);
+        draftLinea.Clear();
+    }
+
+    private decimal Subtotal => Flow.PedidoLineas.Sum(l => l.Subtotal);
     private decimal Iva => Subtotal * 0.16m;
     private decimal Total => Subtotal + Iva;
 

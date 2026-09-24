@@ -6,6 +6,13 @@ public class StockLot
     public Guid ProductId { get; set; }
     public Product? Product { get; set; }
 
+    /// <summary>Orden de fabricación que produjo el lote.</summary>
+    public Guid? ManufacturingOrderId { get; set; }
+    public ManufacturingOrder? ManufacturingOrder { get; set; }
+
+    /// <summary>Clave del producto tal como la conoce CONTPAQi.</summary>
+    public string ProductSku { get; set; } = string.Empty;
+
     public string Name { get; set; } = string.Empty; // "EX-01-260910-042747"
     public string ContpaqLotNumber { get; set; } = string.Empty; // "cNumeroLote" CONTPAQi
 

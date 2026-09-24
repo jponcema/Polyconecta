@@ -1,0 +1,109 @@
+@typeparam TItem
+@*
+    Barra de búsqueda alimentada por la vista de búsqueda del modelo: los campos, los
+    filtros y las agrupaciones los declara el modelo, no la pantalla.
+*@
+<div class="d-flex align-items-center gap-2 position-relative">
+    <div class="o_search_bar">
+        <i class="bi bi-search"></i>
+        @foreach (var f in FacetasContexto)
+        {
+            <span class="o_search_facet" title="@f.Campo">
+                <span class="o_search_facet_field">@f.Campo</span>
+                <span class="o_search_facet_value">@f.Valor</span>
+                @if (f.OnRemove.HasDelegate)
+                {
+                    <button type="button" class="o_search_facet_remove" title="Quitar filtro" @onclick="() => f.OnRemove.InvokeAsync()"><i class="bi bi-x"></i></button>
+                }
+            </span>
+        }
+        @foreach (var grupo in FiltrosActivos.GroupBy(n => CampoDe(n)))
+        {
+            <span class="o_search_facet" title="@grupo.Key">
+                <span class="o_search_facet_field">@grupo.Key</span>
+                <span class="o_search_facet_value">@string.Join(" o ", grupo)</span>
+                <button type="button" class="o_search_facet_remove" title="Quitar filtro" @onclick="() => QuitarGrupo(grupo.Key)"><i class="bi bi-x"></i></button>
+            </span>
+        }
+        <input type="text" placeholder="@Placeholder" value="@Texto" @oninput="OnInput" />
+    </div>
+
+    @if (View.Filtros.Count > 0)
+    {
+        <button class="btn btn-sm btn-light border" @onclick="() => menuAbierto = !menuAbierto" title="Filtros del modelo">
+            <i class="bi bi-funnel"></i>
+            @if (FiltrosActivos.Count > 0)
+            {
+                <span class="badge bg-primary ms-1">@FiltrosActivos.Count</span>
+            }
+        </button>
+    }
+
+    @if (menuAbierto)
+    {
+        <div class="o_search_menu">
+            <div class="o_search_menu_title">Filtros</div>
+            @foreach (var grupo in View.Filtros.GroupBy(f => f.Campo))
+            {
+                <div class="o_search_menu_group">@grupo.Key</div>
+                @foreach (var filtro in grupo)
+                {
+                    var activo = FiltrosActivos.Contains(filtro.Nombre);
+                    <button class="o_search_menu_item @(activo ? "active" : "")" @onclick="() => Alternar(filtro.Nombre)">
+                        <i class="bi @(activo ? "bi-check-square-fill" : "bi-square")"></i> @filtro.Nombre
+                    </button>
+                }
+            }
+            @if (FiltrosActivos.Count > 0)
+            {
+                <button class="o_search_menu_item text-danger border-top" @onclick="LimpiarTodo">
+                    <i class="bi bi-x-circle"></i> Quitar todos los filtros
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    public record Facet(string Campo, string Valor, EventCallback OnRemove = default);
+
+    [Parameter, EditorRequired] public SearchView<TItem> View { get; set; } = new();
+
+    /// <summary>Filtros que llegan del contexto de navegación; se ven y se quitan igual.</summary>
+    [Parameter] public List<Facet> FacetasContexto { get; set; } = new();
+
+    [Parameter] public string Texto { get; set; } = "";
+    [Parameter] public EventCallback<string> TextoChanged { get; set; }
+    [Parameter] public List<string> FiltrosActivos { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> FiltrosActivosChanged { get; set; }
+
+    private bool menuAbierto;
+
+    private string Placeholder => FacetasContexto.Count > 0 || FiltrosActivos.Count > 0
+        ? ""
+        : $"Buscar por {View.EtiquetasCampos}...";
+
+    private string CampoDe(string nombreFiltro) =>
+        View.Filtros.FirstOrDefault(f => f.Nombre == nombreFiltro)?.Campo ?? "Filtro";
+
+    private Task OnInput(ChangeEventArgs e) => TextoChanged.InvokeAsync(e.Value?.ToString() ?? "");
+
+    private Task Alternar(string nombre)
+    {
+        var lista = new List<string>(FiltrosActivos);
+        if (!lista.Remove(nombre)) lista.Add(nombre);
+        return FiltrosActivosChanged.InvokeAsync(lista);
+    }
+
+    private Task QuitarGrupo(string campo)
+    {
+        var lista = FiltrosActivos.Where(n => CampoDe(n) != campo).ToList();
+        return FiltrosActivosChanged.InvokeAsync(lista);
+    }
+
+    private Task LimpiarTodo()
+    {
+        menuAbierto = false;
+        return FiltrosActivosChanged.InvokeAsync(new List<string>());
+    }
+}

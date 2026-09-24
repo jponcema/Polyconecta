@@ -8,12 +8,10 @@
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Disponibilidad", "/disponibilidad") })" />
     </div>
     <div class="d-flex align-items-center gap-2">
-        <input class="form-control form-control-sm" style="width:220px;" placeholder="Buscar clave o producto" @bind="Texto" @bind:event="oninput" />
-        <select class="form-select form-select-sm" style="width:150px;" @bind="Planta">
-            <option value="">Todas las plantas</option>
-            <option value="PIM">PIM (Apodaca)</option>
-            <option value="SC">SC (Guadalupe)</option>
-        </select>
+        <OdooSearchPanel TItem="AvailabilityRow"
+                         View="@SearchViews.Disponibilidad"
+                         @bind-Texto="Texto"
+                         @bind-FiltrosActivos="filtros" />
     </div>
 </div>
 
@@ -155,12 +153,15 @@
     private static readonly ProductClass[] Clases = Enum.GetValues<ProductClass>();
 
     private ProductClass? Clase;
-    private string Planta = "";
     private string Texto = "";
+    private List<string> filtros = new();
     private string? Expandido;
     private DateTime FechaRef = new DateTime(2026, 9, 30);
 
-    private List<AvailabilityRow> Filas => Inv.Filas(Clase, string.IsNullOrEmpty(Planta) ? null : Planta, Texto)
+    // Las clasificaciones siguen siendo la navegación primaria; la búsqueda y los filtros
+    // los resuelve la vista del modelo.
+    private List<AvailabilityRow> Filas => SearchViews.Disponibilidad
+        .Aplicar(Inv.Filas(Clase), Texto, filtros)
         .OrderBy(f => f.Producto.Clasificacion)
         .ThenBy(f => f.Producto.Clave)
         .ThenBy(f => f.Ubicacion)

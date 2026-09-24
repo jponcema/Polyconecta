@@ -10,7 +10,10 @@
         </button>
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Entregas") })" />
     </div>
-    <OdooSearchBox @bind-Value="searchText" />
+    <OdooSearchPanel TItem="SearchViews.LogisticsRow"
+                     View="@SearchViews.Entregas"
+                     @bind-Texto="searchText"
+                     @bind-FiltrosActivos="filtros" />
     <div class="d-flex align-items-center gap-2">
         <div class="btn-group btn-group-sm o_view_switcher">
             <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
@@ -45,10 +48,11 @@
 @code {
     private string searchText = "";
     private bool selected = false;
-    private bool ShowRow => string.IsNullOrWhiteSpace(searchText)
-        || Flow.Entrega.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || Flow.Entrega.Operacion.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || Flow.Entrega.Destino.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+    private List<string> filtros = new();
+
+    private bool ShowRow => SearchViews.Entregas.Aplicar(
+        new[] { new SearchViews.LogisticsRow(Flow.Entrega.Folio, Flow.Entrega.Operacion, Flow.Entrega.Origen, Flow.Entrega.Destino, Flow.Entrega.State) },
+        searchText, filtros).Count > 0;
 
     private void ToggleAll(ChangeEventArgs e) => selected = e.Value is bool b && b;
 

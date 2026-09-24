@@ -20,6 +20,19 @@ Esta spec se ancla en la Constitución del Proyecto v1.4.0 — en particular los
 
 ---
 
+## Estado de ejecución — 23-sep-2026
+
+**Ejecutado:** eliminación de los duplicados de dominio que esta spec ordena reemplazar.
+
+- `MasterOrder` / `SubOrder` → fusionados en `ManufacturingOrder` autoreferenciado (`ParentId` / `ChildOrders`). `OrdersController` dejó de escribir en doble tabla; la ruta `PATCH /api/v1/orders/sub-orders/{id}/status` pasó a `PATCH /api/v1/orders/{id}/status`.
+- `RolloMaestro` → reemplazado por `StockLot`, que gana `ManufacturingOrderId` y `ProductSku`. `RollsController` migrado.
+- Eliminados: las 3 entidades, `OrderConfigurations.cs`, `RolloMaestroConfiguration.cs` y los 3 `DbSet` correspondientes.
+- Tests migrados: `RolloMaestroTests` → `StockLotTests`; `OrdersApiTests` verifica además que no queden duplicados legacy.
+
+**Pendiente de esta spec:** `WorkOrder`, ficha técnica multinivel, `QualityControl` como documento propio, `Incidencia`, numeración centralizada de referencias y la matriz de permisos (esta última se trasladó a SPEC-009).
+
+---
+
 ## Nota de validación posterior — revisión 4 (transcripción de reunión + mockups reales, 2026-09-18/19)
 
 Se revisaron la transcripción de la reunión Polyempaques/AI Consultores del 18-sep-2026 (`docs/references/notes/Notas de reunion - Descripcion de flujos.pdf`) y 19 mockups reales (`docs/mockups/`). Esto **supersede la jerarquía tripartita `OM`/`OF`/`WO` de la User Story 1 y FR-003 más abajo** — se conserva esa sección como registro histórico de la primera hipótesis, no como el diseño vigente. Cambios confirmados (decisión del usuario, todas con la opción recomendada):

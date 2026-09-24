@@ -16,65 +16,33 @@
 </div>
 
 <div class="p-4">
+    <!-- Fuera de .o_form_sheet: los botones de acción flotan sobre el fondo de la página,
+         no dentro del cuadro blanco del documento (ver .o_statusbar en app.css). -->
+    <div class="o_statusbar">
+        <div class="d-flex align-items-center gap-2">
+            @switch (Flow.CurrentOrderStage)
+            {
+                case "Borrador":
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick='() => Flow.SetOrderStage("Confirmado")'>
+                        <i class="bi bi-check-circle me-1"></i> Confirmar
+                    </button>
+                    break;
+                case "Confirmado":
+                    <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.Autorizar()">
+                        <i class="bi bi-check-circle me-1"></i> Autorizar
+                        <span class="badge bg-light text-dark ms-1">@Flow.FirmasRecogidas/2</span>
+                    </button>
+                    break;
+            }
+            @if (Flow.CurrentOrderStage != "Hecho")
+            {
+                <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/pedidos")'>Cancelar</button>
+            }
+        </div>
+    </div>
+
     <div class="d-flex gap-3 align-items-start">
         <div class="o_form_sheet flex-grow-1">
-            <!-- Barra de acciones + statusbar: acoplada al techo de la hoja, no flotando en la página -->
-            <div class="o_statusbar">
-                <div class="d-flex align-items-center gap-2">
-                    @switch (Flow.CurrentOrderStage)
-                    {
-                        case "Borrador":
-                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick='() => Flow.SetOrderStage("Confirmado")'>
-                                <i class="bi bi-check-circle me-1"></i> Confirmar
-                            </button>
-                            break;
-                        case "Confirmado":
-                            <button class="btn btn-primary btn-sm fw-bold px-3" @onclick="() => Flow.Autorizar()"
-                                    disabled="@(Flow.PuedeFirmar ? null : "disabled")"
-                                    title="@(Flow.YaFirmoRolActivo ? $"{Flow.RolActivo} ya firmó" : "Registra su firma de autorización")">
-                                <i class="bi bi-check-circle me-1"></i> Autorizar
-                                <span class="badge bg-light text-dark ms-1">@Flow.FirmasRecogidas/2</span>
-                            </button>
-                            break;
-                    }
-                    @if (Flow.CurrentOrderStage != "Hecho")
-                    {
-                        <button class="btn btn-outline-secondary btn-sm px-3" @onclick='() => NavManager.NavigateTo("/pedidos")'>Cancelar</button>
-                    }
-                    @if (Flow.CurrentOrderStage == "Autorizado")
-                    {
-                        <button class="btn btn-outline-danger btn-sm px-3" @onclick="() => Flow.RevocarFirmas()"
-                                title="Revierte las firmas y libera las reservas del pedido">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i> Revocar autorización
-                        </button>
-                    }
-                </div>
-
-                <div class="d-flex align-items-center gap-3">
-                    @if (Flow.CurrentOrderStage is "Confirmado" or "Autorizado")
-                    {
-                        <div class="d-flex align-items-center gap-2">
-                            @foreach (var rol in OperationalFlowState.RolesAutorizadores)
-                            {
-                                var firmado = Flow.Firmas.TryGetValue(rol, out var quien);
-                                <span class="badge @(firmado ? "bg-success-subtle text-success-emphasis" : "bg-secondary-subtle text-secondary-emphasis") px-2 py-1"
-                                      title="@(firmado ? $"Firmado por {quien}" : "Pendiente de firma")">
-                                    <i class="bi @(firmado ? "bi-check-circle-fill" : "bi-hourglass") me-1"></i>@rol
-                                </span>
-                            }
-                        </div>
-                    }
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="small text-muted">Operando como</span>
-                        <select class="form-select form-select-sm" style="width:150px;" @bind="RolSeleccionado">
-                            <option value="Atención a Clientes">Atención a Clientes</option>
-                            <option value="Comercial">Comercial</option>
-                            <option value="Cobranza">Cobranza</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
             <div class="o_sheet_body">
                 <OdooStatusPipeline Stages="@Stages" CurrentStage="@Flow.CurrentOrderStage" />
                 <PocSalesOrderForm />
@@ -89,22 +57,25 @@
 
     private static readonly List<string> Stages = new() { "Borrador", "Confirmado", "Autorizado", "En progreso", "Hecho" };
 
-    private string RolSeleccionado
-    {
-        get => Flow.RolActivo;
-        set => Flow.RolActivo = value;
-    }
-
     private List<OdooSmartButtons.SmartButtonModel> SmartButtons => new()
     {
         new() { Label = "Entrega", CountBadge = 1, IconClass = "bi bi-truck", TargetRoute = $"/entregas/{Flow.Entrega.Folio}" },
-        new() { Label = "Fabricación", CountBadge = 1, IconClass = "bi bi-diagram-3", TargetRoute = "/fabricacion/BOL-2026-0001" }
+        new() { Label = "Fabricación", CountBadge = Flow.OrdenesDePedido(Folio).Count, IconClass = "bi bi-diagram-3", TargetRoute = $"/fabricacion?pedido={Folio}" }
     };
 
-    private readonly List<OdooChatterDrawer.ChatterEntry> chatterEntries = new()
+    private List<OdooChatterDrawer.ChatterEntry> chatterEntries
     {
-        new() { Timestamp = "17 Sep 26", Text = "Creación del pedido por Alejandro" }
-    };
+        get
+        {
+            var entradas = new List<OdooChatterDrawer.ChatterEntry>
+            {
+                new() { Timestamp = "17 Sep 26", Text = "Creación del pedido por Alejandro" }
+            };
+            foreach (var (rol, quien) in Flow.Firmas)
+                entradas.Add(new() { Timestamp = "hoy", Text = $"Autorización de {rol} firmada por {quien}" });
+            return entradas;
+        }
+    }
 
     protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
 

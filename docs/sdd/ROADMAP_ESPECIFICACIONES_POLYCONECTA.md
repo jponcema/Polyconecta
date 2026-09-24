@@ -4,7 +4,34 @@
 **Proyecto:** PolyConecta (Motor Operativo de Ruteo y Gestión de Existencias / MES)  
 **Empresa:** Polyempaques  
 **Alineación:** Constitución del Proyecto v1.4.0 + [INFORME_VALIDACION_DIAGRAMA_OPERATIVO.md](file:///Users/emilio/Development/Sandbox/Polyconecta/docs/assesment/INFORME_VALIDACION_DIAGRAMA_OPERATIVO.md)  
-**Fecha:** Septiembre 2026  
+**Fecha:** Septiembre 2026 · **Realineado:** 23 de septiembre de 2026
+
+---
+
+## ⚠️ Realineación de numeración (23-sep-2026)
+
+La numeración original de este roadmap (`001`–`006`) **no corresponde a los directorios reales** de `.specify/features/`. La ejecución tomó otro camino: la base se compactó en tres specs implementadas y las specs operativas se numeraron a partir de `007`. Los directorios son la fuente de verdad; este roadmap queda realineado a ellos.
+
+| Directorio real | Spec | Estado |
+| :--- | :--- | :--- |
+| `000-foundational` | Fundación técnica (Clean Architecture + dominio Odoo-native + SPA) | ✅ Implementada |
+| `001-poc-end-to-end-operational-flow` | Prueba de concepto del flujo operativo completo | ✅ Implementada |
+| `002-domain-model-redefinition` | Redefinición del modelo de dominio | 🔄 Parcial — ver nota abajo |
+| `003-presentation-shell-consolidation` | Consolidación del shell de presentación | ✅ Implementada |
+| `007-procurement-rules-and-authorization` | Disponibilidad, reserva y autorización de dos firmas | 📝 Draft |
+| `008-wip-component-recollection` | Recolección de componentes a WIP | 📝 Draft |
+| `009-users-roles-permissions` | Usuarios, roles y permisos | 📝 Draft |
+| `010-search-view-dynamic-filters` | Vista de búsqueda y filtros dinámicos | 📝 Draft — parcialmente implementada |
+
+**Qué fue de las specs `004`–`006` del plan original:** nunca se crearon como directorios. Su contenido sigue vigente como trabajo pendiente y se reubica así:
+
+- **SPEC-004 (Balance de masa y cierre técnico)** — pendiente. `008` le aporta el lado de la entrada de la ecuación (`Recolectado = Consumido + Devuelto + Scrap`).
+- **SPEC-005 (Logística y traspasos de 2 pasos)** — implementada en el prototipo (traslado, recepción, entrega, recolección) sin spec formal propia; los tipos de operación viven en `ARQUITECTURA_ALMACENES_RUTAS_Y_ABASTECIMIENTO.md` y en `008`.
+- **SPEC-006 (Conversión bolseo/impresión en STC)** — pendiente, sin spec escrita.
+
+**Nota sobre `002`:** la fusión de `MasterOrder`/`SubOrder` en `ManufacturingOrder` autoreferenciado y el reemplazo de `RolloMaestro` por `StockLot` **ya se ejecutaron** (23-sep-2026). El resto de la spec —`WorkOrder`, ficha técnica multinivel, `QualityControl` como documento propio, numeración centralizada— sigue pendiente.
+
+Las secciones siguientes se conservan como **registro del plan original**, no como índice vigente.
 
 ---
 

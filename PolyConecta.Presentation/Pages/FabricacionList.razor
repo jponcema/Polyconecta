@@ -9,9 +9,13 @@
         <button class="btn btn-primary btn-sm fw-bold px-3" disabled="disabled" title="Alta manual deshabilitada en esta demo: las Órdenes de Fabricación nacen del Pedido">
             <i class="bi bi-plus-lg me-1"></i> Nuevo
         </button>
-        <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Órdenes de Fabricación") })" />
+        <OdooBreadcrumb Items="@Breadcrumb" />
     </div>
-    <OdooSearchBox @bind-Value="searchText" />
+    <OdooSearchPanel TItem="ManufacturingOrder"
+                     View="@SearchViews.Fabricacion"
+                     FacetasContexto="@Facetas"
+                     @bind-Texto="searchText"
+                     @bind-FiltrosActivos="filtros" />
     <div class="d-flex align-items-center gap-2">
         <OdooViewSwitcher />
     </div>
@@ -30,7 +34,7 @@
                     </div>
                     @foreach (var of in FilteredOrders.Where(o => o.State == stage))
                     {
-                        <div class="kanban-card" @onclick='() => NavManager.NavigateTo($"/fabricacion/{of.Folio}")'>
+                        <div class="kanban-card" @onclick="() => Abrir(of.Folio)">
                             <div class="fw-bold text-dark small">@of.Folio</div>
                             <div class="text-muted small">@of.ProcessLabel</div>
                             <div class="badge badge-brand mt-2">@of.State</div>
@@ -47,7 +51,6 @@
                 <tr>
                     <th style="width:36px;"><input type="checkbox" class="form-check-input" @onchange="ToggleAll" /></th>
                     <th>Folio</th>
-                    <th>Origen</th>
                     <th>Producto</th>
                     <th>Proceso</th>
                     <th class="text-end">Cantidad</th>
@@ -55,25 +58,25 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var of in FilteredOrders)
+                @foreach (var nodo in ArbolPlano)
                 {
-                    <tr style="cursor:pointer;" class="@(selected.Contains(of.Folio) ? "table-active" : "")" @onclick='() => NavManager.NavigateTo($"/fabricacion/{of.Folio}")'>
-                        <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected.Contains(of.Folio)" @onchange="() => ToggleOne(of.Folio)" /></td>
-                        <td class="fw-semibold text-primary">@of.Folio</td>
-                        <td>
-                            @if (of.OriginFolio == null)
+                    <tr style="cursor:pointer;" class="@(selected.Contains(nodo.Of.Folio) ? "table-active" : "")" @onclick="() => Abrir(nodo.Of.Folio)">
+                        <td @onclick:stopPropagation="true"><input type="checkbox" class="form-check-input" checked="@selected.Contains(nodo.Of.Folio)" @onchange="() => ToggleOne(nodo.Of.Folio)" /></td>
+                        <td class="fw-semibold text-primary" style="padding-left:@(12 + nodo.Nivel * 26)px;">
+                            @if (nodo.Nivel > 0)
                             {
-                                <span class="text-muted">— (maestra)</span>
+                                <i class="bi bi-arrow-return-right text-muted me-1" style="opacity:.55;"></i>
                             }
-                            else
+                            @nodo.Of.Folio
+                            @if (nodo.Nivel == 0 && nodo.Hijos.Count > 0)
                             {
-                                <a href="/fabricacion/@of.OriginFolio" class="text-decoration-none" @onclick:stopPropagation="true">@of.OriginFolio</a>
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis ms-2" style="font-size:.65rem;">maestra</span>
                             }
                         </td>
-                        <td>@of.Producto</td>
-                        <td>@of.ProcessLabel</td>
-                        <td class="text-end">@of.Cantidad.ToString("N1") @of.Unidad</td>
-                        <td><span class="badge badge-brand">@of.State</span></td>
+                        <td>@nodo.Of.Producto</td>
+                        <td>@nodo.Of.ProcessLabel</td>
+                        <td class="text-end">@nodo.Of.Cantidad.ToString("N1") @nodo.Of.Unidad</td>
+                        <td><span class="badge badge-brand">@nodo.Of.State</span></td>
                     </tr>
                 }
             </tbody>
@@ -88,11 +91,88 @@
     private string searchText = "";
     private readonly HashSet<string> selected = new();
 
-    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders.Where(o =>
-        string.IsNullOrWhiteSpace(searchText)
-        || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || o.ProcessLabel.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+    /// <summary>Filtro por pedido: el smart button del Pedido enlaza aquí con su folio.</summary>
+    [SupplyParameterFromQuery(Name = "pedido")] public string? Pedido { get; set; }
+
+    private List<OdooBreadcrumb.Crumb> Breadcrumb => string.IsNullOrEmpty(Pedido)
+        ? new() { new("Órdenes de Fabricación") }
+        : new()
+        {
+            new("Pedidos", "/pedidos"),
+            new(Pedido, $"/pedidos/{Pedido}"),
+            new("Órdenes de Fabricación")
+        };
+
+    /// <summary>
+    /// El contexto de navegación se expresa como faceta en la barra de búsqueda, igual que
+    /// cualquier filtro que el usuario aplique: se ve y se quita del mismo modo.
+    /// </summary>
+    private List<OdooSearchPanel<ManufacturingOrder>.Facet> Facetas => string.IsNullOrEmpty(Pedido)
+        ? new()
+        : new() { new("Pedido", Pedido!, EventCallback.Factory.Create(this, QuitarFiltroPedido)) };
+
+    private List<string> filtros = new();
+
+    private void QuitarFiltroPedido() => NavManager.NavigateTo("/fabricacion");
+
+    // La búsqueda la resuelve la vista del modelo; la lista solo aporta el filtro de contexto.
+    private List<ManufacturingOrder> FilteredOrders => SearchViews.Fabricacion.Aplicar(
+        Flow.ManufacturingOrders.Where(o => string.IsNullOrEmpty(Pedido) || o.PedidoFolio == Pedido),
+        searchText, filtros);
+
+    private record Nodo(ManufacturingOrder Of, int Nivel, List<Nodo> Hijos);
+
+    /// <summary>
+    /// La estructura de datos no cambia — sigue siendo la misma lista con OriginFolio.
+    /// Lo único que cambia es cómo se muestra: anidada por jerarquía.
+    /// </summary>
+    private List<Nodo> Arbol
+    {
+        get
+        {
+            var visibles = FilteredOrders;
+            var folios = visibles.Select(o => o.Folio).ToHashSet();
+
+            List<Nodo> Hijos(string folio, int nivel) => visibles
+                .Where(o => o.OriginFolio == folio)
+                .OrderBy(o => o.Folio)
+                .Select(o => new Nodo(o, nivel, Hijos(o.Folio, nivel + 1)))
+                .ToList();
+
+            // Raíz: sin origen, o cuyo origen quedó fuera del filtro actual.
+            return visibles
+                .Where(o => o.OriginFolio == null || !folios.Contains(o.OriginFolio))
+                .OrderBy(o => o.Folio)
+                .Select(o => new Nodo(o, 0, Hijos(o.Folio, 1)))
+                .ToList();
+        }
+    }
+
+    /// <summary>Recorrido en profundidad: cada fila conoce su nivel de anidamiento.</summary>
+    private List<Nodo> ArbolPlano
+    {
+        get
+        {
+            var plano = new List<Nodo>();
+            void Recorrer(IEnumerable<Nodo> nodos)
+            {
+                foreach (var n in nodos)
+                {
+                    plano.Add(n);
+                    Recorrer(n.Hijos);
+                }
+            }
+            Recorrer(Arbol);
+            return plano;
+        }
+    }
+
+    /// <summary>
+    /// Abre la OF arrastrando el contexto actual: al volver, el breadcrumb devuelve a esta
+    /// misma lista filtrada y no a la lista completa.
+    /// </summary>
+    private void Abrir(string folio) => NavManager.NavigateTo(
+        string.IsNullOrEmpty(Pedido) ? $"/fabricacion/{folio}" : $"/fabricacion/{folio}?pedido={Pedido}");
 
     private void ToggleOne(string folio)
     {

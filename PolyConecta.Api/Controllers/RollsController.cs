@@ -21,7 +21,7 @@ public class RollsController : ControllerBase
     }
 
     public record CaptureRollRequest(
-        Guid SubOrderId,
+        Guid ManufacturingOrderId,
         int LineId,
         string ProductSku,
         decimal GrossWeightKg,
@@ -44,11 +44,11 @@ public class RollsController : ControllerBase
         }
 
         var folioObj = Folio.Generate(request.LineId, DateTime.UtcNow);
-        var roll = new RolloMaestro
+        var roll = new StockLot
         {
-            SubOrderId = request.SubOrderId,
-            Folio = folioObj.Value,
-            LotNumber = folioObj.Value, // 1:1 mapping to CONTPAQi cNumeroLote
+            ManufacturingOrderId = request.ManufacturingOrderId,
+            Name = folioObj.Value,
+            ContpaqLotNumber = folioObj.Value, // 1:1 mapping to CONTPAQi cNumeroLote
             ProductSku = request.ProductSku,
             GrossWeightKg = request.GrossWeightKg,
             TareWeightKg = request.TareWeightKg,
@@ -60,27 +60,27 @@ public class RollsController : ControllerBase
             Shift = request.Shift,
             OperatorId = request.OperatorId,
             Status = "Available",
-            LocationCode = "PIM/Produccion"
+            CurrentLocationCode = "PIM/Produccion"
         };
 
-        _db.MasterRolls.Add(roll);
+        _db.StockLots.Add(roll);
         await _db.SaveChangesAsync(cancellationToken);
 
         await _outbox.EnqueueAsync("RollCreated", new
         {
             RollId = roll.Id,
-            Folio = roll.Folio,
-            LotNumber = roll.LotNumber,
+            Folio = roll.Name,
+            LotNumber = roll.ContpaqLotNumber,
             NetWeightKg = roll.NetWeightKg
         }, cancellationToken);
 
-        return CreatedAtAction(nameof(GetRollByFolio), new { folio = roll.Folio }, roll);
+        return CreatedAtAction(nameof(GetRollByFolio), new { folio = roll.Name }, roll);
     }
 
     [HttpGet("{folio}")]
     public async Task<IActionResult> GetRollByFolio(string folio, CancellationToken cancellationToken)
     {
-        var roll = await _db.MasterRolls.FirstOrDefaultAsync(r => r.Folio == folio, cancellationToken);
+        var roll = await _db.StockLots.FirstOrDefaultAsync(r => r.Name == folio, cancellationToken);
         if (roll == null) return NotFound();
         return Ok(roll);
     }

@@ -8,7 +8,7 @@ namespace PolyConecta.IntegrationTests;
 
 public class OrdersApiTests
 {
-    private PolyDbContext GetDbContext()
+    private static PolyDbContext GetDbContext()
     {
         var options = new DbContextOptionsBuilder<PolyDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -16,8 +16,10 @@ public class OrdersApiTests
         return new PolyDbContext(options);
     }
 
+    private static readonly string[] ProcesosEsperados = { "Extrusion", "Printing", "Bagging" };
+
     [Fact]
-    public async Task CreateMasterOrder_ShouldAutoDecomposeProcessSubOrders()
+    public async Task CreateMasterOrder_ShouldAutoDecomposeProcessOrders()
     {
         var db = GetDbContext();
         var controller = new OrdersController(db);
@@ -27,10 +29,29 @@ public class OrdersApiTests
 
         result.Should().BeOfType<Microsoft.AspNetCore.Mvc.CreatedAtActionResult>();
 
-        var masterOrders = await db.MasterOrders.Include(x => x.SubOrders).ToListAsync();
-        masterOrders.Should().HaveCount(1);
-        masterOrders[0].SubOrders.Should().HaveCount(3);
-        masterOrders[0].SubOrders.Select(s => s.ProcessType).Should().Contain(new[] { "EXT", "IMP", "BOL" });
-        masterOrders[0].SubOrders.All(s => s.Status == "Borrador").Should().BeTrue();
+        var maestras = await db.ManufacturingOrders
+            .Include(x => x.ChildOrders)
+            .Where(x => x.ProcessType == "Master")
+            .ToListAsync();
+
+        maestras.Should().HaveCount(1);
+        maestras[0].ChildOrders.Should().HaveCount(3);
+        maestras[0].ChildOrders.Select(s => s.ProcessType).Should().Contain(ProcesosEsperados);
+        maestras[0].ChildOrders.All(s => s.State == "Draft").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CreateMasterOrder_ShouldNotLeaveLegacyDuplicates()
+    {
+        var db = GetDbContext();
+        var controller = new OrdersController(db);
+
+        await controller.CreateMasterOrder(
+            new OrdersController.CreateMasterOrderRequest(421, "CLI-100", "PT-BAG-001", 5000.0m),
+            CancellationToken.None);
+
+        // La jerarquía vive en una sola tabla autoreferenciada: 1 maestra + 3 hijas.
+        var total = await db.ManufacturingOrders.CountAsync();
+        total.Should().Be(4);
     }
 }

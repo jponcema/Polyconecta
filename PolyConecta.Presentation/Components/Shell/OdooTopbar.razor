@@ -35,9 +35,8 @@
 
     private static readonly List<(string Prefix, ModuleInfo Info)> ModuleMap = new()
     {
-        ("/pedidos", new("Ventas", new() { ("Pedidos", "/pedidos"), ("Disponibilidad", "/disponibilidad"), ("Rutas", "/rutas") })),
-        ("/rutas", new("Inventario", new() { ("Disponibilidad", "/disponibilidad"), ("Rutas", "/rutas"), ("Recolecciones", "/recolecciones") })),
-        ("/disponibilidad", new("Inventario", new() { ("Disponibilidad", "/disponibilidad"), ("Rutas", "/rutas"), ("Recolecciones", "/recolecciones") })),
+        ("/pedidos", new("Ventas", new() { ("Pedidos", "/pedidos"), ("Disponibilidad", "/disponibilidad") })),
+        ("/disponibilidad", new("Inventario", new() { ("Disponibilidad", "/disponibilidad"), ("Recolecciones", "/recolecciones") })),
         ("/fabricacion", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
         ("/captura-masiva", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
         ("/incidencias", new("Fabricación", new() { ("Fabricación", "/fabricacion"), ("Captura Masiva", "/captura-masiva"), ("Incidencias", "/incidencias") })),
@@ -46,7 +45,6 @@
         ("/recepcion", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
         ("/recolecciones", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
         ("/entregas", new("Logística", new() { ("Traslados", "/traslados"), ("Recepción", "/recepcion"), ("Entregas", "/entregas"), ("Recolecciones", "/recolecciones") })),
-        ("/piso", new("Planta", new() { ("Báscula", "/piso/bascula") })),
     };
 
     private static readonly ModuleInfo Empty = new("", new());

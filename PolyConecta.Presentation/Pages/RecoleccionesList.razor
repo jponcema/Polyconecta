@@ -12,7 +12,10 @@
         </button>
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Recolecciones") })" />
     </div>
-    <OdooSearchBox @bind-Value="searchText" />
+    <OdooSearchPanel TItem="StockOperation"
+                     View="@SearchViews.Operaciones"
+                     @bind-Texto="searchText"
+                     @bind-FiltrosActivos="filtros" />
     <div class="d-flex align-items-center gap-2">
         <div class="btn-group btn-group-sm o_view_switcher">
             <button class="btn-view active" disabled><i class="bi bi-list-ul"></i></button>
@@ -57,13 +60,10 @@
     private string searchText = "";
     private readonly HashSet<string> seleccionadas = new();
 
-    private List<StockOperation> Filtradas => Ops.Operaciones
-        .Where(o => string.IsNullOrWhiteSpace(searchText)
-                 || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                 || o.Operacion.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                 || o.OfFolio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-                 || o.Destino.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-        .ToList();
+    private List<string> filtros = new();
+
+    private List<StockOperation> Filtradas =>
+        SearchViews.Operaciones.Aplicar(Ops.Operaciones, searchText, filtros);
 
     private void Toggle(string folio)
     {

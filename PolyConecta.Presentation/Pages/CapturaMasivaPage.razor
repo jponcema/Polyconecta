@@ -8,7 +8,10 @@
         <button class="btn btn-outline-secondary btn-sm" disabled title="Fuera de alcance de esta demo"><i class="bi bi-file-earmark-excel me-1"></i> Importar</button>
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Captura Masiva de Producción") })" />
     </div>
-    <OdooSearchBox @bind-Value="searchText" />
+    <OdooSearchPanel TItem="ManufacturingOrder"
+                     View="@SearchViews.Fabricacion"
+                     @bind-Texto="searchText"
+                     @bind-FiltrosActivos="filtros" />
     <div class="d-flex align-items-center gap-2">
         <OdooViewSwitcher KanbanEnabled="false" />
     </div>
@@ -51,19 +54,15 @@
 
 @code {
     private string searchText = "";
+    private List<string> filtros = new();
     private readonly HashSet<string> selected = new();
 
     /// <summary>Columnas de captura de kg por rollo (R1..R15), fijas.</summary>
     private const int MaxRollos = 15;
 
     /// <summary>La captura masiva es exclusiva de produccion de Extrusion.</summary>
-    private List<ManufacturingOrder> FilteredOrders => Flow.ManufacturingOrders
-        .Where(o => o.ProcessType == "Extrusion")
-        .Where(o => string.IsNullOrWhiteSpace(searchText)
-            || o.Folio.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            || o.Producto.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-            || o.PedidoFolio.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-        .ToList();
+    private List<ManufacturingOrder> FilteredOrders => SearchViews.Fabricacion.Aplicar(
+        Flow.ManufacturingOrders.Where(o => o.ProcessType == "Extrusion"), searchText, filtros);
 
     private static string StateBadgeClass(string state) => state switch
     {

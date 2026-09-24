@@ -60,34 +60,6 @@ public class OrdersController : ControllerBase
         }
 
         _db.ManufacturingOrders.Add(parentOrder);
-        
-        // Also seed legacy entity for backwards compatibility
-        var legacyMaster = new MasterOrder
-        {
-            Id = parentOrder.Id,
-            FolioOm = name,
-            CidDocumentoPedido = request.CidDocumentoPedido,
-            CustomerCode = request.CustomerCode,
-            PtSku = request.PtSku,
-            TargetQuantityKg = request.TargetQuantityKg,
-            Status = "Draft"
-        };
-
-        var legacyProcesses = new[] { "EXT", "IMP", "BOL" };
-        int legacyProcSeq = 1;
-        foreach (var proc in legacyProcesses)
-        {
-            legacyMaster.SubOrders.Add(new SubOrder
-            {
-                FolioOf = $"OF-{proc}-2026-{sequence:D4}-{legacyProcSeq++}",
-                ProcessType = proc,
-                MachineId = proc == "EXT" ? "EXT-01" : proc == "IMP" ? "IMP-01" : "BOL-01",
-                Status = "Borrador",
-                PlannedQtyKg = request.TargetQuantityKg
-            });
-        }
-
-        _db.MasterOrders.Add(legacyMaster);
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -101,34 +73,21 @@ public class OrdersController : ControllerBase
             .Include(x => x.ChildOrders)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             
-        if (mo == null)
-        {
-            var legacy = await _db.MasterOrders.Include(x => x.SubOrders).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
-            if (legacy == null) return NotFound();
-            return Ok(legacy);
-        }
+        if (mo == null) return NotFound();
         return Ok(mo);
     }
 
     public record UpdateStatusRequest(string NewStatus, string? Notes);
 
-    [HttpPatch("sub-orders/{id}/status")]
-    public async Task<IActionResult> UpdateSubOrderStatus(Guid id, [FromBody] UpdateStatusRequest request, CancellationToken cancellationToken)
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateStatusRequest request, CancellationToken cancellationToken)
     {
         var mo = await _db.ManufacturingOrders.FindAsync(new object[] { id }, cancellationToken);
-        if (mo != null)
-        {
-            mo.State = request.NewStatus;
-            await _db.SaveChangesAsync(cancellationToken);
-            return Ok(mo);
-        }
+        if (mo == null) return NotFound();
 
-        var subOrder = await _db.SubOrders.FindAsync(new object[] { id }, cancellationToken);
-        if (subOrder == null) return NotFound();
-
-        subOrder.Status = request.NewStatus;
+        mo.State = request.NewStatus;
         await _db.SaveChangesAsync(cancellationToken);
 
-        return Ok(subOrder);
+        return Ok(mo);
     }
 }

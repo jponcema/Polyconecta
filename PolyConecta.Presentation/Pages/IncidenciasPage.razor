@@ -7,7 +7,10 @@
         <button class="btn btn-outline-secondary btn-sm" disabled title="Fuera de alcance de esta demo"><i class="bi bi-file-earmark-excel me-1"></i> Importar</button>
         <OdooBreadcrumb Items="@(new List<OdooBreadcrumb.Crumb> { new("Captura de Incidencias") })" />
     </div>
-    <OdooSearchBox @bind-Value="searchText" />
+    <OdooSearchPanel TItem="Incidencia"
+                     View="@SearchViews.Incidencias"
+                     @bind-Texto="searchText"
+                     @bind-FiltrosActivos="filtros" />
     <div class="d-flex align-items-center gap-2">
         <OdooViewSwitcher KanbanEnabled="false" />
     </div>
@@ -48,11 +51,10 @@
 
     private string searchText = "";
 
-    private List<Incidencia> FilteredIncidencias => Flow.Incidencias.Where(i =>
-        string.IsNullOrWhiteSpace(searchText)
-        || i.CentroTrabajo.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || i.Tipo.Contains(searchText, StringComparison.OrdinalIgnoreCase)
-        || i.Comentarios.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+    private List<string> filtros = new();
+
+    private List<Incidencia> FilteredIncidencias =>
+        SearchViews.Incidencias.Aplicar(Flow.Incidencias, searchText, filtros);
 
     protected override void OnInitialized() => Flow.OnChange += StateHasChanged;
     public void Dispose() => Flow.OnChange -= StateHasChanged;
